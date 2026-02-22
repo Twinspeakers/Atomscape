@@ -5,8 +5,12 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
 const mdxPlugin = mdx()
+const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? ''
+const githubPagesBase = repoName ? `/${repoName}/` : '/'
+const base = process.env.VITE_BASE_PATH ?? (process.env.GITHUB_ACTIONS === 'true' ? githubPagesBase : '/')
 
 export default defineConfig({
+  base,
   resolve: {
     alias: {
       '@app': path.resolve(__dirname, 'src/app'),
