@@ -1,0 +1,141 @@
+{
+  "packId": "base.processes.v1",
+  "version": 1,
+  "processes": [
+    {
+      "id": "rockSorter",
+      "name": "Rock Sorter",
+      "energyCost": 12,
+      "consume": { "rubble": 10 },
+      "produce": {
+        "silicaSand": 4,
+        "ironOre": 2,
+        "waterIce": 2,
+        "co2Ice": 1,
+        "carbonRock": 0.6,
+        "slagWaste": 0.4
+      },
+      "successMessage": "Rock sorter separated rubble into mineral fractions."
+    },
+    {
+      "id": "iceMelter",
+      "name": "Ice Melter",
+      "energyCost": 1,
+      "consume": { "waterIce": 1 },
+      "produce": { "water": 1 },
+      "successMessage": "Ice melter converted water ice into liquid water."
+    },
+    {
+      "id": "electrolyzer",
+      "name": "Electrolyzer",
+      "energyCost": 4,
+      "consume": { "water": 1 },
+      "produce": { "hydrogenNeutral": 2, "oxygenGas": 1 },
+      "successMessage": "Electrolysis split water into hydrogen and oxygen."
+    },
+    {
+      "id": "ionizer",
+      "name": "Ionizer",
+      "energyCost": 3,
+      "consume": { "hydrogenNeutral": 8 },
+      "produce": { "hydrogenIonized": 8 },
+      "successMessage": "Ionizer energized neutral hydrogen into plasma."
+    },
+    {
+      "id": "co2Sublimator",
+      "name": "CO2 Sublimator",
+      "energyCost": 1,
+      "consume": { "co2Ice": 1 },
+      "produce": { "co2Gas": 1 },
+      "successMessage": "CO2 ice sublimated into gas feedstock."
+    },
+    {
+      "id": "carbonRefiner",
+      "name": "Carbon Refiner",
+      "energyCost": 2,
+      "consume": { "carbonRock": 1 },
+      "produce": { "carbon": 1 },
+      "successMessage": "Carbon rock refined into usable carbon."
+    },
+    {
+      "id": "blastFurnace",
+      "name": "Blast Furnace",
+      "energyCost": 8,
+      "consume": { "ironOre": 1, "carbon": 3 },
+      "produce": { "ironMetal": 2, "coGas": 3 },
+      "successMessage": "Furnace reduced iron ore with carbon into iron metal and CO gas."
+    },
+    {
+      "id": "coBurner",
+      "name": "CO Burner",
+      "energyGain": 3,
+      "consume": { "coGas": 2, "oxygenGas": 1 },
+      "produce": { "co2Gas": 2 },
+      "successMessage": "CO burner oxidized CO into CO2 and recovered energy."
+    },
+    {
+      "id": "glassForge",
+      "name": "Glass Forge",
+      "energyCost": 5,
+      "consume": { "silicaSand": 3 },
+      "produce": { "glass": 1 },
+      "successMessage": "Glass forge fused silica into structural glass."
+    },
+    {
+      "id": "steelMill",
+      "name": "Steel Mill",
+      "energyCost": 6,
+      "consume": { "ironMetal": 2, "carbon": 0.1 },
+      "produce": { "steel": 2 },
+      "successMessage": "Steel mill alloyed iron with carbon."
+    },
+    {
+      "id": "greenhouse",
+      "name": "Greenhouse",
+      "energyCost": 10,
+      "consume": { "co2Gas": 6, "water": 5 },
+      "produce": { "cellulose": 1, "oxygenGas": 6 },
+      "successMessage": "Greenhouse photosynthesis produced cellulose and oxygen."
+    },
+    {
+      "id": "woodWorkshop",
+      "name": "Wood Workshop",
+      "energyCost": 7,
+      "consume": { "cellulose": 5 },
+      "produce": { "wood": 1 },
+      "successMessage": "Wood workshop compressed cellulose into wood stock."
+    },
+    {
+      "id": "boxOfSandPress",
+      "name": "Box of Sand Press",
+      "energyCost": 3,
+      "consume": { "silicaSand": 6 },
+      "produce": { "boxOfSand": 1 },
+      "successMessage": "Starter product crafted: Box of Sand."
+    },
+    {
+      "id": "steelIngotCaster",
+      "name": "Steel Ingot Caster",
+      "energyCost": 4,
+      "consume": { "steel": 2 },
+      "produce": { "steelIngot": 1 },
+      "successMessage": "Steel recast into market-ready ingots."
+    },
+    {
+      "id": "energyCellAssembler",
+      "name": "Energy Cell Assembler",
+      "energyCost": 132,
+      "consume": { "hydrogenIonized": 6, "carbon": 1, "ironMetal": 1 },
+      "produce": { "energyCell": 1 },
+      "successMessage": "Energy cell assembled for high-demand export."
+    },
+    {
+      "id": "galaxyBarAssembler",
+      "name": "Galaxy Bar Assembler",
+      "energyCost": 6,
+      "consume": { "cellulose": 2, "water": 1, "carbon": 0.4 },
+      "produce": { "galaxyBar": 1 },
+      "successMessage": "Galaxy Bar ration assembled for crew nutrition."
+    }
+  ]
+}

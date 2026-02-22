@@ -1,0 +1,216 @@
+{/* AUTO-GENERATED. Run `npm run wiki:sync`. */}
+# Quest Reference
+
+This page is generated from quest definitions and updates with objective changes.
+
+## Main Quest: Learning To Charge (`main-learning-charge`)
+
+- Summary: Establish your first stable station charging loop.
+
+- Rewards:
+- Starter Material Cache: Adds 2 Iron Metal to Cargo.
+
+### Step 1: Approach Charging Range (`approachStationForCharging`)
+- Description: Move within 50 m of the station so charging can activate.
+- Detail: Fly toward the station beacon.
+Reduce distance until you are at or below 50 m.
+- Hint: Use the station marker and close distance until the station is in range.
+- Focus target: `space-return-station`
+### Step 2: Open Station Controls (`openStationTabForCharging`)
+- Description: Open Game Menu > Station to access charging controls.
+- Detail: Open the Game Menu.
+Open Station.
+- Hint: Press P to open Station.
+- Focus target: `lab-start-charging`
+- Lab tab: `station`
+### Step 3: Engage Station Charging (`engageCharging`)
+- Description: Click Start Charging while in station range.
+- Detail: Stay within 50 m.
+Click Start Charging in Station controls.
+- Hint: Game Menu > Station > Start Charging
+- Focus target: `lab-start-charging`
+- Lab tab: `station`
+### Step 4: Confirm Charge Flow (`startCharging`)
+- Description: Confirm Charge/s is positive while charging remains active.
+- Detail: Keep charging turned on.
+Check Station telemetry.
+Confirm Charge/s is above 0.
+- Hint: If Charge/s is 0, move closer to the station.
+- Focus target: `lab-start-charging`
+- Lab tab: `station`
+
+## Main Quest: Feed The Crew (`main-feed-the-crew`)
+
+- Summary: Build your first food ration chain and keep the crew supplied.
+
+- Rewards:
+- Fridge Unlock Package: Unlocks Fridge; Adds 5 Galaxy Bars to Fridge.
+
+### Step 1: Shoot The Right Targets (`targetFeedstock`)
+- Description: Collect enough feedstock-equivalent stock for one full Galaxy Bar production cycle.
+- Detail: Exact total required for the full chain:
+- Water equivalent: 11
+- CO2 equivalent: 12
+- Carbon equivalent: 0.4
+Fast path: mine rubble, then run Rock Sorter in Game Menu > Laboratory > Mining + Sorting to generate feedstocks in bulk.
+Target Volatile Ice Chunks to collect water ice and CO2 ice.
+Target Carbon-rich Asteroids first to collect carbon rock quickly.
+Target Composite Junk Clusters as secondary carbon source.
+Water equivalent counts as: Water Ice + Water + (5 x Cellulose) + (11 x Galaxy Bars).
+CO2 equivalent counts as: CO2 Ice + CO2 Gas + (6 x Cellulose) + (12 x Galaxy Bars).
+Carbon equivalent counts as: Carbon Rock + Carbon + (0.4 x Galaxy Bars).
+Processing early is valid and still counts.
+- Hint: Fast path: Game Menu > Laboratory > Mining + Sorting > Rock Sorter. This reduces grind dramatically.
+- Focus target: `space-viewport`
+### Step 2: Create Water (`createWaterForRations`)
+- Description: Convert mined water ice into liquid water.
+- Detail: Open Game Menu > Laboratory > Hydrogen.
+Run Ice Melter to convert water ice -> water.
+Repeat until Water reaches at least 11.
+- Hint: Game Menu > Laboratory > Hydrogen > Ice Melter
+- Focus target: `lab-run-ice-melter`
+- Lab tab: `hydrogen`
+### Step 3: Create CO2 Gas (`createCo2GasForRations`)
+- Description: Convert mined CO2 ice into CO2 gas for greenhouse processing.
+- Detail: Open Game Menu > Laboratory > Refining.
+Run CO2 Sublimator to convert CO2 ice -> CO2 gas.
+Repeat until CO2 Gas reaches at least 12.
+- Hint: Game Menu > Laboratory > Refining > CO2 Sublimator
+- Focus target: `lab-run-co2-sublimator`
+- Lab tab: `refining`
+### Step 4: Create Cellulose (`createCellulose`)
+- Description: Run Greenhouse to synthesize cellulose for ration assembly.
+- Detail: Open Game Menu > Laboratory > Manufacture.
+Ensure Water and CO2 Gas are available in inventory.
+Run Greenhouse.
+Repeat until Cellulose reaches at least 2.
+If inputs are missing, return to Hydrogen and Refining to produce more.
+- Hint: Game Menu > Laboratory > Manufacture > Greenhouse
+- Focus target: `lab-run-greenhouse`
+- Lab tab: `manufacturing`
+### Step 5: Create Carbon (`createCarbonForRations`)
+- Description: Refine carbon rock into usable carbon.
+- Detail: Open Game Menu > Laboratory > Refining.
+Run Carbon Refiner to convert carbon rock -> carbon.
+Repeat until Carbon reaches at least 0.4.
+- Hint: Game Menu > Laboratory > Refining > Carbon Refiner
+- Focus target: `lab-run-carbon-refiner`
+- Lab tab: `refining`
+### Step 6: Stage Galaxy Bar Ingredients (`stageGalaxyBarIngredients`)
+- Description: Confirm all required ingredients are ready in inventory.
+- Detail: Open Game Menu > Laboratory > Manufacture.
+Confirm Cellulose is at least 2.
+Confirm Water is at least 1.
+Confirm Carbon is at least 0.4.
+Confirm Energy reserve is at least 6.
+Start assembly only when all minimums are met.
+- Hint: Game Menu > Laboratory > Manufacture ingredient row should meet all minimums before assembly.
+- Focus target: `lab-tab-manufacturing`
+- Lab tab: `manufacturing`
+### Step 7: Create The Galaxy Bar (`craftGalaxyBar`)
+- Description: Run Galaxy Bar Assembler to produce one crew ration.
+- Detail: Open Game Menu > Laboratory > Manufacture.
+Run Galaxy Bar Assembler.
+Confirm one Galaxy Bar is added to inventory.
+- Hint: Game Menu > Laboratory > Manufacture > Galaxy Bar Assembler
+- Focus target: `lab-run-galaxy-bar-assembler`
+- Lab tab: `manufacturing`
+
+## Main Quest: Orbital Cleanup Protocol (`main-orbital-cleanup-protocol`)
+
+- Summary: Run the full loop from in-space salvage to station processing and first manufactured product.
+
+- Rewards:
+- Manufacturing Starter Kit: Adds 1 Box of Sand to Cargo; Adds 1 Steel Ingot to Cargo.
+
+### Step 1: Approach The High-Risk Salvage Pocket (`approachHighRiskZone`)
+- Description: Fly into the High-Risk Salvage Pocket and stabilize your approach.
+- Detail: Open the Object panel and expand Nearest Contacts.
+Fly toward the contact labeled High-Risk Salvage Pocket.
+Enter the High-Risk Salvage Pocket zone.
+Stabilize your speed and orientation inside the zone.
+Keep position inside the zone until the step completes.
+- Hint: Follow zone labels in the Object panel Nearest Contacts list until you enter High-Risk Salvage Pocket.
+- Focus target: `space-zone-high-risk`
+### Step 2: Salvage Composite Junk Clusters (`salvageCompositeJunk`)
+- Description: Extract at least 2 Composite Junk Clusters in the high-risk zone.
+- Detail: Stay inside the High-Risk Salvage Pocket.
+Target contacts labeled Composite Junk Cluster.
+Verify target class in the Object panel before firing.
+Complete 2 successful extractions on Composite Junk targets.
+- Hint: Prioritize contacts labeled Composite Junk Cluster and clear at least two.
+- Focus target: `space-class-composite-junk`
+### Step 3: Mine Asteroid Rubble (`mineRubble`)
+- Description: Use the mining laser to break asteroids and collect rubble chunks.
+- Detail: Aim at white asteroid targets.
+Fire your mining laser to break targets.
+Collect rubble from successful target breaks.
+Keep enough battery charge available while mining.
+- Focus target: `space-viewport`
+### Step 4: Return And Dock (`returnToStation`)
+- Description: Return to station and dock within the 50 m docking corridor.
+- Detail: Leave the salvage zone and fly to the station beacon.
+Enter the docking corridor within 50 m.
+Open Game Menu > Station.
+Click Dock To Station.
+Confirm your station distance is pinned at 0 m.
+- Hint: Use station beacon + charge ring, then dock inside 50 m.
+- Focus target: `space-return-station`
+- Lab tab: `station`
+### Step 5: Run The Rock Sorter (`sortRubble`)
+- Description: Convert rubble into silica sand, iron ore, water ice, and other fractions.
+- Detail: Open Game Menu > Laboratory > Mining + Sorting.
+Run Rock Sorter when rubble is available.
+Confirm output includes silica sand, iron ore, and water ice.
+Repeat as needed to build processing feedstock.
+- Hint: Game Menu > Laboratory > Mining + Sorting > Rock Sorter
+- Focus target: `lab-run-rock-sorter`
+- Lab tab: `sorting`
+### Step 6: Make Hydrogen And Oxygen (`electrolyzeWater`)
+- Description: Melt water ice and electrolyze water to produce neutral hydrogen and oxygen.
+- Detail: Open Game Menu > Laboratory > Hydrogen.
+Run Ice Melter to convert water ice into liquid water.
+Run Electrolyzer to split water into hydrogen and oxygen.
+Repeat until both outputs are present in inventory.
+- Hint: Game Menu > Laboratory > Hydrogen > Ice Melter, then Electrolyzer
+- Focus target: `lab-run-ice-melter`
+- Lab tab: `hydrogen`
+### Step 7: Stabilize Plasma (`ionizeHydrogen`)
+- Description: Ionize hydrogen and enable magnetic containment to control recombination.
+- Detail: Open Game Menu > Laboratory > Hydrogen.
+Run Ionizer to convert neutral hydrogen into ionized hydrogen.
+Enable Magnetic Containment.
+Monitor energy so containment remains online.
+- Hint: Game Menu > Laboratory > Hydrogen > Ionizer, then enable containment
+- Focus target: `lab-run-ionizer`
+- Lab tab: `hydrogen`
+### Step 8: Craft Your First Product (`manufacturePart`)
+- Description: Build your first market-ready item in Manufacturing.
+- Detail: Open Game Menu > Laboratory > Manufacture.
+Run Box of Sand Press or another starter product node.
+Confirm at least one manufactured product is added to inventory.
+- Hint: Game Menu > Laboratory > Manufacture > Box of Sand Press
+- Focus target: `lab-run-box-of-sand-press`
+- Lab tab: `manufacturing`
+## Side Quest
+### First Contract Delivery (`side-first-contract`)
+
+- Summary: Deliver your first market item and start earning credits.
+
+- Rewards:
+- Contract Bonus Materials: Adds 1 Iron Metal to Cargo.
+
+### Side Step 1: Craft a Box of Sand (`side-craft-first-contract-item`)
+
+- Description: Produce one Box of Sand in Manufacturing.
+- Detail: Open Game Menu > Laboratory > Manufacture.
+Run Box of Sand Press.
+Ensure silica sand and energy requirements are satisfied before running.
+Confirm one Box of Sand is added to inventory.
+
+### Side Step 2: Sell Any Product (`side-sell-first-contract-item`)
+
+- Description: Sell one manufactured product in the Store.
+- Detail: Open Game Menu > Store.
+Sell one unit of any available product.
+Confirm credits increase after the sale.

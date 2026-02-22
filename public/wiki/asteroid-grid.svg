@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" fill="none">
+  <rect width="900" height="360" rx="24" fill="#020617"/>
+  <circle cx="450" cy="180" r="135" stroke="#38bdf8" stroke-opacity="0.45" stroke-width="3"/>
+  <circle cx="450" cy="180" r="88" stroke="#38bdf8" stroke-opacity="0.35" stroke-width="3"/>
+  <circle cx="450" cy="180" r="42" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="3"/>
+  <circle cx="450" cy="180" r="7" fill="#38bdf8"/>
+  <circle cx="562" cy="146" r="8" fill="#f8fafc"/>
+  <circle cx="340" cy="252" r="8" fill="#f8fafc"/>
+  <circle cx="624" cy="232" r="8" fill="#f8fafc"/>
+  <circle cx="286" cy="136" r="8" fill="#f8fafc"/>
+  <text x="56" y="324" fill="#bae6fd" font-size="32" font-family="Segoe UI">Asteroid contacts inside tactical radar range</text>
+</svg>

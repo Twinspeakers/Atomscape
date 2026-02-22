@@ -1,0 +1,24 @@
+# Asteroid Mining
+
+Asteroids are rendered as high-contrast white spheres around the ship.
+Your mining laser now consumes ship energy and yields **rubble**, not pure elements.
+
+## Selection
+
+Clicking an asteroid tags it in the object panel and displays:
+
+- range from ship
+- dominant spectral element signature
+- integrity estimate
+
+## Destruction And Yield
+
+Projectile collision removes the asteroid and adds rubble chunks.
+Rubble is a mixed feedstock that must be processed in the laboratory rock sorter.
+
+![Asteroid radar grid](/wiki/asteroid-grid.svg)
+
+## Respawn Loop
+
+A fresh asteroid is spawned after each successful mine so the field stays active.
+This keeps exploration and beneficiation continuous.

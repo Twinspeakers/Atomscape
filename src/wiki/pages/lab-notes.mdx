@@ -1,0 +1,33 @@
+# Laboratory Notes
+
+The lab is now a process simulator with station power, beneficiation, chemistry, manufacturing, and crew support controls.
+
+## Station Tick Systems
+
+Every second the simulation runs:
+
+- station charging (if enabled and in range)
+- containment power drain (if enabled)
+- plasma recombination (ionized H to neutral H)
+- crew survival (hunger/thirst/debuff progression with automation)
+
+Docking forces station distance to `0 m`, and charging stops automatically if distance exceeds `50 m`.
+
+## Resource Flow
+
+1. Mine asteroids into rubble.
+2. Sort rubble into silica, iron ore, ice, CO2 ice, carbon rock, and slag.
+3. Run water and gas chemistry (melter, electrolyzer, ionizer).
+4. Refine and manufacture glass, steel, cellulose, and wood.
+
+## Crew + Fridge
+
+- Open `Game Menu > Crew` (hotkey `C`) for per-member status and automation controls.
+- `Feed The Crew` quest reward unlocks the fridge and preloads 5 Galaxy Bars.
+- Galaxy Bar consumption priority is `Fridge -> Cargo`.
+- Water automation consumes water when thirst thresholds are crossed.
+
+## Atom Counter
+
+The Atom Counter tab totals H/C/O/Si/Fe across all stored compounds.
+Balanced recipes move atoms between containers instead of creating or destroying matter.

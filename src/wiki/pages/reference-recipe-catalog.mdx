@@ -1,0 +1,208 @@
+{/* AUTO-GENERATED. Run `npm run wiki:sync`. */}
+# Recipe Catalog Reference
+
+This page is generated from the recipe registry and updates with authored recipe-pack changes.
+
+- Total recipes: **15**
+- Process-bound recipes: **15**
+- Unique disciplines: **13**
+- Unique stations: **9**
+- Unlock kinds: **4**
+- Unique tags: **14**
+- Tier distribution: T1: 4, T2: 4, T3: 3, T4: 3, T5: 1
+
+### Blast Furnace Iron (`blastFurnaceIron`)
+- Tier: **2**
+- Discipline: `metallurgy`
+- Station: `metallurgyBay`
+- Unlock: `quest` / `quest.main.oreToMetal`
+- Summary: Reduce iron ore to iron metal and CO byproduct.
+- Process: `blastFurnace`
+- Inputs:
+- 3 Carbon (Refined) (`carbon`, units)
+- 1 Iron Ore (Fe2O3) (`ironOre`, units)
+- Outputs:
+- 3 Carbon Monoxide (CO) (`coGas`, moles)
+- 2 Iron Metal (`ironMetal`, ingots)
+- Tags: `refining`, `metallurgy`
+### Box of Sand Pack (`boxOfSandPack`)
+- Tier: **4**
+- Discipline: `logistics`
+- Station: `assemblyBay`
+- Unlock: `reputation` / `market.contractsStarter`
+- Summary: Package silica feedstock into a marketable starter product.
+- Process: `boxOfSandPress`
+- Inputs:
+- 6 Silica Sand (SiO2) (`silicaSand`, units)
+- Outputs:
+- 1 Box of Sand (`boxOfSand`, boxes)
+- Tags: `market`, `starter`
+### Carbon Refiner Product (`carbonRefinerProduct`)
+- Tier: **1**
+- Discipline: `carbonRefining`
+- Station: `metallurgyBay`
+- Unlock: `starter` / `starter.bootstrap`
+- Summary: Refine carbon-rich rock into pure carbon feedstock.
+- Process: `carbonRefiner`
+- Inputs:
+- 1 Carbon Rock (~C) (`carbonRock`, units)
+- Outputs:
+- 1 Carbon (Refined) (`carbon`, units)
+- Tags: `refining`, `metallurgy`
+### CO2 Sublimator Gas (`co2SublimatorGas`)
+- Tier: **1**
+- Discipline: `atmospherics`
+- Station: `atmosphericsBay`
+- Unlock: `starter` / `starter.bootstrap`
+- Summary: Sublimate CO2 ice to gaseous feedstock.
+- Process: `co2Sublimator`
+- Inputs:
+- 1 CO2 Ice (`co2Ice`, units)
+- Outputs:
+- 1 CO2 Gas (`co2Gas`, moles)
+- Tags: `refining`, `atmospherics`
+### Electrolyzer Split (`electrolyzerSplit`)
+- Tier: **2**
+- Discipline: `electrochemistry`
+- Station: `electrochemLab`
+- Unlock: `quest` / `quest.main.learningToCharge`
+- Summary: Split liquid water into neutral hydrogen and oxygen gas.
+- Process: `electrolyzer`
+- Inputs:
+- 1 Liquid Water (`water`, L)
+- Outputs:
+- 2 Hydrogen (Neutral) (`hydrogenNeutral`, atoms)
+- 1 Oxygen Gas (O2) (`oxygenGas`, moles)
+- Tags: `hydrogen`, `energy`
+### Energy Cell Assembly (`energyCellAssembly`)
+- Tier: **5**
+- Discipline: `energySystems`
+- Station: `assemblyBay`
+- Unlock: `reputation` / `market.contractsEnergy`
+- Summary: Assemble ionized hydrogen, carbon, and iron into an energy cell.
+- Process: `energyCellAssembler`
+- Inputs:
+- 1 Carbon (Refined) (`carbon`, units)
+- 6 Hydrogen (Ionized) (`hydrogenIonized`, ions)
+- 1 Iron Metal (`ironMetal`, ingots)
+- Outputs:
+- 1 Energy Cell (`energyCell`, cells)
+- Tags: `market`, `energy`
+### Galaxy Bar Ration (`galaxyBarRation`)
+- Tier: **4**
+- Discipline: `crewSustainment`
+- Station: `crewGalley`
+- Unlock: `quest` / `quest.main.feedCrew`
+- Summary: Assemble a complete ration bar from cellulose, water, and carbon.
+- Process: `galaxyBarAssembler`
+- Inputs:
+- 0.4 Carbon (Refined) (`carbon`, units)
+- 2 Cellulose (`cellulose`, blocks)
+- 1 Liquid Water (`water`, L)
+- Outputs:
+- 1 Galaxy Bar (`galaxyBar`, bars)
+- Tags: `crew`, `survival`
+### Glass Forge Panels (`glassForgePanels`)
+- Tier: **2**
+- Discipline: `glassworking`
+- Station: `fabricationBay`
+- Unlock: `research` / `research.fabricationGlassI`
+- Summary: Fuse silica into structural glass panels.
+- Process: `glassForge`
+- Inputs:
+- 3 Silica Sand (SiO2) (`silicaSand`, units)
+- Outputs:
+- 1 Glass (`glass`, panels)
+- Tags: `manufacturing`, `construction`
+### Greenhouse Cellulose (`greenhouseCellulose`)
+- Tier: **2**
+- Discipline: `bioprocessing`
+- Station: `bioLab`
+- Unlock: `research` / `research.bioprocessingI`
+- Summary: Convert CO2 and water into cellulose and oxygen.
+- Process: `greenhouse`
+- Inputs:
+- 6 CO2 Gas (`co2Gas`, moles)
+- 5 Liquid Water (`water`, L)
+- Outputs:
+- 1 Cellulose (`cellulose`, blocks)
+- 6 Oxygen Gas (O2) (`oxygenGas`, moles)
+- Tags: `bio`, `manufacturing`
+### Ice Melter Hydration (`iceMelterHydration`)
+- Tier: **1**
+- Discipline: `hydration`
+- Station: `processingBay`
+- Unlock: `starter` / `starter.bootstrap`
+- Summary: Convert harvested water ice to liquid water feedstock.
+- Process: `iceMelter`
+- Inputs:
+- 1 Water Ice (H2O) (`waterIce`, units)
+- Outputs:
+- 1 Liquid Water (`water`, L)
+- Tags: `hydrogen`, `starter`
+### Ionizer Plasma (`ionizerPlasma`)
+- Tier: **3**
+- Discipline: `plasmaSystems`
+- Station: `plasmaBay`
+- Unlock: `research` / `research.plasmaContainmentI`
+- Summary: Ionize neutral hydrogen for plasma containment loops.
+- Process: `ionizer`
+- Inputs:
+- 8 Hydrogen (Neutral) (`hydrogenNeutral`, atoms)
+- Outputs:
+- 8 Hydrogen (Ionized) (`hydrogenIonized`, ions)
+- Tags: `hydrogen`, `plasma`
+### Rock Sorter Fractions (`rockSorterFractions`)
+- Tier: **1**
+- Discipline: `sorting`
+- Station: `processingBay`
+- Unlock: `starter` / `starter.bootstrap`
+- Summary: Sort mined rubble into core asteroid feedstocks.
+- Process: `rockSorter`
+- Inputs:
+- 10 Asteroid Rubble (`rubble`, chunks)
+- Outputs:
+- 0.6 Carbon Rock (~C) (`carbonRock`, units)
+- 1 CO2 Ice (`co2Ice`, units)
+- 2 Iron Ore (Fe2O3) (`ironOre`, units)
+- 4 Silica Sand (SiO2) (`silicaSand`, units)
+- 0.4 Slag / Waste (`slagWaste`, units)
+- 2 Water Ice (H2O) (`waterIce`, units)
+- Tags: `sorting`, `starter`
+### Steel Ingot Cast (`steelIngotCast`)
+- Tier: **4**
+- Discipline: `logistics`
+- Station: `assemblyBay`
+- Unlock: `reputation` / `market.contractsSteel`
+- Summary: Cast steel beams into ingot export format.
+- Process: `steelIngotCaster`
+- Inputs:
+- 2 Steel (`steel`, beams)
+- Outputs:
+- 1 Steel Ingot (`steelIngot`, ingots)
+- Tags: `market`, `metallurgy`
+### Steel Mill Beams (`steelMillBeams`)
+- Tier: **3**
+- Discipline: `metallurgy`
+- Station: `metallurgyBay`
+- Unlock: `research` / `research.metallurgyI`
+- Summary: Alloy iron and carbon into structural steel beams.
+- Process: `steelMill`
+- Inputs:
+- 0.1 Carbon (Refined) (`carbon`, units)
+- 2 Iron Metal (`ironMetal`, ingots)
+- Outputs:
+- 2 Steel (`steel`, beams)
+- Tags: `manufacturing`, `construction`
+### Wood Workshop Planks (`woodWorkshopPlanks`)
+- Tier: **3**
+- Discipline: `woodcraft`
+- Station: `fabricationBay`
+- Unlock: `research` / `research.biofabricationI`
+- Summary: Compress cellulose stock into wood planks.
+- Process: `woodWorkshop`
+- Inputs:
+- 5 Cellulose (`cellulose`, blocks)
+- Outputs:
+- 1 Wood (`wood`, planks)
+- Tags: `bio`, `construction`

@@ -1,0 +1,58 @@
+{/* AUTO-GENERATED. Run `npm run wiki:sync`. */}
+# Systems Reference
+
+This page is generated from game constants and is always source-of-truth.
+
+## Core Simulation Constants
+- Charging range: **50 m**
+- Mining laser energy cost: **6**
+- Asteroid rubble yield per mine: **6**
+
+## Tick Order
+1. `stationCharging`
+2. `containmentDrain`
+3. `plasmaRecombination`
+4. `dockingOverride`
+5. `crewSurvival`
+
+## Plasma + Containment
+- Containment drain base: **1 / sec**
+- Containment drain power factor: **5 / sec**
+- Recombination base rate: **22% / sec**
+- Max recombination reduction from containment: **85%**
+
+## Crew Survival (Per Member)
+- Crew count: **4**
+- Hunger decay: **0.001 / sec**
+- Thirst decay: **0.001 / sec**
+- Starving threshold: **12**
+- Dehydrated threshold: **12**
+- Auto-eat threshold: **65**
+- Auto-drink threshold: **70**
+- Galaxy Bar hunger restore: **33.333**
+- Water drink cost: **0.25 L**
+- Water drink restore: **25**
+- Debuff max: **55%**
+- Debuff gain (starving): **0.6% / sec**
+- Debuff gain (dehydrated): **0.8% / sec**
+- Debuff recovery (healthy): **0.5% / sec**
+
+## Sleep Rotation
+- Sleep cycle: **24 h**
+- Sleep window: **8 h**
+- Shift starts: **0, 6, 12, 18 h**
+
+## Fridge
+- Default capacity: **40 Galaxy Bars**
+- Feed The Crew unlock preload: **5 Galaxy Bars**
+
+## Market Model
+- Demand recovery: **0.018 / sec**
+- Random sway magnitude: **0.03**
+- Price floor multiplier: **0.45x**
+- Price ceiling multiplier: **1.9x**
+
+### Tracked Products
+- Box of Sand (`boxOfSand`) base price: **45 cr**
+- Steel Ingot (`steelIngot`) base price: **165 cr**
+- Energy Cell (`energyCell`) base price: **420 cr**

@@ -1,0 +1,177 @@
+{
+  "generatedAt": "2026-02-21T14:31:08.118Z",
+  "source": "tools/checks/architecture-boundaries.mjs",
+  "violations": [
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 14,
+      "specifier": "../../components/CrosshairOverlay",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 15,
+      "specifier": "../../components/GameModal",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 16,
+      "specifier": "../../components/QuestRewardModal",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 17,
+      "specifier": "../../components/ShipStatusBar",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 18,
+      "specifier": "../../components/TargetLabelsOverlay",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 19,
+      "specifier": "../../components/TutorialOverlay",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 20,
+      "specifier": "../../components/panels/ActionsPanel",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 21,
+      "specifier": "../../components/panels/HudPanel",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 22,
+      "specifier": "../../components/panels/InventoryPanel",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 23,
+      "specifier": "../../components/panels/ObjectPanel",
+      "sourceLayer": "app",
+      "targetLayer": "components",
+      "message": "Layer \"app\" should not depend on legacy \"components\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 31,
+      "specifier": "../../store/useAppStore",
+      "sourceLayer": "app",
+      "targetLayer": "store",
+      "message": "Layer \"app\" should not depend on legacy \"store\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 32,
+      "specifier": "../../store/types",
+      "sourceLayer": "app",
+      "targetLayer": "store",
+      "message": "Layer \"app\" should not depend on legacy \"store\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/app/routes/GameScreen.tsx",
+      "line": 62,
+      "specifier": "../../game/ShipInteriorViewport",
+      "sourceLayer": "app",
+      "targetLayer": "game",
+      "message": "Layer \"app\" should not depend on legacy \"game\" path."
+    },
+    {
+      "type": "forbidden_layer_import",
+      "file": "src/domain/world/cleanupCatalog.ts",
+      "line": 11,
+      "specifier": "@features/simulation/math",
+      "sourceLayer": "domain",
+      "targetLayer": "features",
+      "message": "Layer \"domain\" must not import \"features\"."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/features/quests/questDefinitions.ts",
+      "line": 17,
+      "specifier": "../../data/resourceCatalog",
+      "sourceLayer": "features",
+      "targetLayer": "data",
+      "message": "Layer \"features\" should not depend on legacy \"data\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/state/types.ts",
+      "line": 1,
+      "specifier": "../data/resourceCatalog",
+      "sourceLayer": "state",
+      "targetLayer": "data",
+      "message": "Layer \"state\" should not depend on legacy \"data\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/state/useAppStore.test.ts",
+      "line": 19,
+      "specifier": "../db/gameDb",
+      "sourceLayer": "state",
+      "targetLayer": "db",
+      "message": "Layer \"state\" should not depend on legacy \"db\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/state/useAppStore.ts",
+      "line": 61,
+      "specifier": "../db/gameDb",
+      "sourceLayer": "state",
+      "targetLayer": "db",
+      "message": "Layer \"state\" should not depend on legacy \"db\" path."
+    },
+    {
+      "type": "legacy_path_import",
+      "file": "src/state/useAppStore.ts",
+      "line": 62,
+      "specifier": "../data/resourceCatalog",
+      "sourceLayer": "state",
+      "targetLayer": "data",
+      "message": "Layer \"state\" should not depend on legacy \"data\" path."
+    }
+  ]
+}

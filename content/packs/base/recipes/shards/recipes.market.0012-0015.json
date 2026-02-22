@@ -1,0 +1,57 @@
+{
+  "shardId": "recipes.market.0012-0015",
+  "recipes": [
+    {
+      "id": "boxOfSandPack",
+      "label": "Box of Sand Pack",
+      "tier": 4,
+      "discipline": "logistics",
+      "station": "assemblyBay",
+      "unlock": { "kind": "reputation", "id": "market.contractsStarter" },
+      "summary": "Package silica feedstock into a marketable starter product.",
+      "processId": "boxOfSandPress",
+      "inputs": { "silicaSand": 6 },
+      "outputs": { "boxOfSand": 1 },
+      "tags": ["market", "starter"]
+    },
+    {
+      "id": "steelIngotCast",
+      "label": "Steel Ingot Cast",
+      "tier": 4,
+      "discipline": "logistics",
+      "station": "assemblyBay",
+      "unlock": { "kind": "reputation", "id": "market.contractsSteel" },
+      "summary": "Cast steel beams into ingot export format.",
+      "processId": "steelIngotCaster",
+      "inputs": { "steel": 2 },
+      "outputs": { "steelIngot": 1 },
+      "tags": ["market", "metallurgy"]
+    },
+    {
+      "id": "energyCellAssembly",
+      "label": "Energy Cell Assembly",
+      "tier": 5,
+      "discipline": "energySystems",
+      "station": "assemblyBay",
+      "unlock": { "kind": "reputation", "id": "market.contractsEnergy" },
+      "summary": "Assemble ionized hydrogen, carbon, and iron into an energy cell.",
+      "processId": "energyCellAssembler",
+      "inputs": { "hydrogenIonized": 6, "carbon": 1, "ironMetal": 1 },
+      "outputs": { "energyCell": 1 },
+      "tags": ["market", "energy"]
+    },
+    {
+      "id": "galaxyBarRation",
+      "label": "Galaxy Bar Ration",
+      "tier": 4,
+      "discipline": "crewSustainment",
+      "station": "crewGalley",
+      "unlock": { "kind": "quest", "id": "quest.main.feedCrew" },
+      "summary": "Assemble a complete ration bar from cellulose, water, and carbon.",
+      "processId": "galaxyBarAssembler",
+      "inputs": { "cellulose": 2, "water": 1, "carbon": 0.4 },
+      "outputs": { "galaxyBar": 1 },
+      "tags": ["crew", "survival"]
+    }
+  ]
+}

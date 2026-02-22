@@ -1,0 +1,56 @@
+import type { AppState } from '@state/appStoreState'
+
+export const selectHydrateInventory = (state: AppState) => state.hydrateInventory
+export const selectHydrateWorldSession = (state: AppState) => state.hydrateWorldSession
+export const selectTryFireMiningLaser = (state: AppState) => state.tryFireMiningLaser
+export const selectRecordExtractionHit = (state: AppState) => state.recordExtractionHit
+export const selectRecordWorldTargetDepleted = (state: AppState) => state.recordWorldTargetDepleted
+export const selectHandleFailure = (state: AppState) => state.handleFailure
+export const selectShipRespawnSignal = (state: AppState) => state.shipRespawnSignal
+export const selectWorldStateLoaded = (state: AppState) => state.worldStateLoaded
+export const selectActiveSectorId = (state: AppState) => state.activeSectorId
+export const selectWorldSeed = (state: AppState) => state.worldSeed
+export const selectWorldDepletedTargetIds = (state: AppState) => state.worldDepletedTargetIds
+export const selectJumpToSector = (state: AppState) => state.jumpToSector
+export const selectSetStationDistanceFromScene = (state: AppState) => state.setStationDistanceFromScene
+export const selectSetSelectedObject = (state: AppState) => state.setSelectedObject
+export const selectSetShipTelemetry = (state: AppState) => state.setShipTelemetry
+export const selectSetRadarContacts = (state: AppState) => state.setRadarContacts
+export const selectSetActiveCleanupZone = (state: AppState) => state.setActiveCleanupZone
+export const selectTutorialChecklist = (state: AppState) => state.tutorialChecklist
+export const selectTutorialCurrentStepIndex = (state: AppState) => state.tutorialCurrentStepIndex
+export const selectTutorialComplete = (state: AppState) => state.tutorialComplete
+export const selectQuestRewardNotifications = (state: AppState) => state.questRewardNotifications
+export const selectDismissQuestRewardNotification = (state: AppState) =>
+  state.dismissQuestRewardNotification
+export const selectCharging = (state: AppState) => state.charging
+export const selectDocked = (state: AppState) => state.docked
+export const selectStationDistance = (state: AppState) => state.stationDistance
+export const selectEnergy = (state: AppState) => state.energy
+export const selectMaxEnergy = (state: AppState) => state.maxEnergy
+export const selectCredits = (state: AppState) => state.credits
+export const selectPlayerUsername = (state: AppState) => state.playerUsername
+export const selectLeftPanels = (state: AppState) => state.leftPanels
+export const selectRightPanels = (state: AppState) => state.rightPanels
+export const selectHiddenPanels = (state: AppState) => state.hiddenPanels
+export const selectPanelSlotHints = (state: AppState) => state.panelSlotHints
+export const selectUiDensity = (state: AppState) => state.uiDensity
+export const selectPanelOpacity = (state: AppState) => state.panelOpacity
+export const selectWorkspaceCustomizerOpen = (state: AppState) => state.workspaceCustomizerOpen
+export const selectMovePanel = (state: AppState) => state.movePanel
+export const selectTogglePanelVisibility = (state: AppState) => state.togglePanelVisibility
+export const selectSetUiDensity = (state: AppState) => state.setUiDensity
+export const selectSetPanelOpacity = (state: AppState) => state.setPanelOpacity
+export const selectToggleWorkspaceCustomizer = (state: AppState) => state.toggleWorkspaceCustomizer
+export const selectSetWorkspacePreset = (state: AppState) => state.setWorkspacePreset
+export const selectResetWorkspaceUi = (state: AppState) => state.resetWorkspaceUi
+export const selectLabActiveTab = (state: AppState) => state.labActiveTab
+export const selectSetLabActiveTab = (state: AppState) => state.setLabActiveTab
+export const selectUseConsumableSlot = (state: AppState) => state.useConsumableSlot
+export const selectSetPlayerUsername = (state: AppState) => state.setPlayerUsername
+export const selectActiveCommsSpeaker = (state: AppState) => state.activeCommsSpeaker
+export const selectAppendSimulationLog = (state: AppState) => state.appendSimulationLog
+export const selectToggleDocked = (state: AppState) => state.toggleDocked
+export const selectStartCharging = (state: AppState) => state.startCharging
+export const selectTickSimulation = (state: AppState) => state.tickSimulation
+export const selectResetAllProgress = (state: AppState) => state.resetAllProgress
