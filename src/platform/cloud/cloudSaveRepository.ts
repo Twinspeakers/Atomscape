@@ -146,7 +146,7 @@ export async function sendCloudMagicLink(email: string): Promise<void> {
 
   const emailRedirectTo = typeof window === 'undefined'
     ? undefined
-    : `${window.location.origin}${window.location.pathname}`
+    : new URL(import.meta.env.BASE_URL, window.location.origin).toString()
   const { error } = await client.auth.signInWithOtp({
     email: normalizedEmail,
     options: {

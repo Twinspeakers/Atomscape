@@ -13,6 +13,20 @@ Append-only running log for implementation-level changes, debugging outcomes, an
 ---
 
 ## 2026-02-22 - Codex
+- Summary: Fixed GitHub Pages base-path regression by adding Router basename support (`/Fun_with_Matter`) and forcing Supabase magic-link redirects to target `import.meta.env.BASE_URL` instead of transient current path.
+- Files:
+  - `src/main.tsx`
+  - `src/platform/cloud/cloudSaveRepository.ts`
+  - `docs/worklog.md`
+- Validation:
+  - `npm run lint` passed
+  - `npm run test` passed (143 tests)
+  - `npm run build` passed
+  - `npm run quality:check` passed
+- Follow-ups:
+  - If new route paths are added later, keep basename-aware links/navigation patterns to avoid domain-root redirects on Pages.
+
+## 2026-02-22 - Codex
 - Summary: Added an email-first startup authentication gate for cloud builds, so first screen is now a dedicated sign-in modal before Main Menu.
 - Files:
   - `src/app/routes/GameScreen.tsx`
