@@ -14,7 +14,6 @@ import { GameModal, type GameModalSection } from '@components/GameModal'
 import { MainMenuModal } from '@components/MainMenuModal'
 import { QuestRewardModal } from '@components/QuestRewardModal'
 import { ShipStatusBar } from '@components/ShipStatusBar'
-import { StartupSignInModal } from '@components/StartupSignInModal'
 import { TargetLabelsOverlay } from '@components/TargetLabelsOverlay'
 import { DockSidebar, WorkspaceCustomizer } from '@app/routes/gameScreenLayoutPanels'
 import { workspacePresets } from '@app/routes/workspacePresets'
@@ -24,25 +23,10 @@ import {
   type StationFeedbackEvent,
   type TargetLabelAnchor,
 } from '@features/viewport/types'
-import {
-  getPrimaryCloudSave,
-  getCloudSaveUser,
-  isCloudRepositoryEnabled,
-  savePrimaryCloudSave,
-  sendCloudMagicLink,
-  signOutCloudSave,
-  subscribeCloudSaveAuth,
-} from '@platform/cloud/cloudSaveRepository'
 import { CHARGING_RANGE_METERS, STATION_DOCKING_RANGE_METERS } from '@domain/spec/gameSpec'
 import { useAppStore } from '@state/store'
 import * as gameScreenSelectors from '@state/selectors/gameScreenSelectors'
-import {
-  applyCloudSavePayload,
-  buildCloudSavePayloadFromState,
-  hasPersistedRuntimeSnapshot,
-  isCloudSavePayloadV1,
-  MAIN_MENU_AUTOSTART_STORAGE_KEY,
-} from '@state/persistence/cloudSavePayload'
+import { RUNTIME_STATE_STORAGE_KEY } from '@state/runtime/snapshotPersistence'
 import type { DockSide, PanelId, WorkspacePreset } from '@state/types'
 
 type SceneView = 'space' | 'interior'
@@ -50,12 +34,30 @@ type RuntimeOverlayMode = 'running' | 'paused' | 'mainMenu'
 const sceneFadeDurationMs = 220
 const mainMenuAutostartWindowMs = 30_000
 const sceneLoadingFallback = <div className="h-full w-full bg-black" />
+const MAIN_MENU_AUTOSTART_STORAGE_KEY = 'space-main-menu-autostart-v1'
 function resolvePublicAssetPath(relativePath: string): string {
   const trimmedPath = relativePath.replace(/^\/+/, '')
   return `${import.meta.env.BASE_URL}${trimmedPath}`
 }
 const defaultPlayerCommsImage = resolvePublicAssetPath('assets/portraits/player-default.svg')
-const cloudSavesEnabled = isCloudRepositoryEnabled()
+
+function hasPersistedRuntimeSnapshot(): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const raw = window.localStorage.getItem(RUNTIME_STATE_STORAGE_KEY)
+  if (!raw) {
+    return false
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { version?: number }
+    return parsed.version === 1
+  } catch {
+    return false
+  }
+}
 
 function requestMainMenuAutostart(): void {
   if (typeof window === 'undefined') {
@@ -181,14 +183,6 @@ export function GameScreen() {
   const sceneSwapTimeoutRef = useRef<number | null>(null)
   const playerNameEditorRef = useRef<HTMLDivElement | null>(null)
   const cancelPlayerNameEditRef = useRef(false)
-  const [cloudAuthEmail, setCloudAuthEmail] = useState('')
-  const [cloudBusy, setCloudBusy] = useState(false)
-  const [cloudStatusMessage, setCloudStatusMessage] = useState<string | null>(null)
-  const [cloudErrorMessage, setCloudErrorMessage] = useState<string | null>(null)
-  const [cloudUserId, setCloudUserId] = useState<string | null>(null)
-  const [cloudUserEmail, setCloudUserEmail] = useState<string | null>(null)
-  const [cloudHasSave, setCloudHasSave] = useState(false)
-  const [cloudSaveUpdatedAt, setCloudSaveUpdatedAt] = useState<string | null>(null)
 
   const hydrateInventory = useAppStore(gameScreenSelectors.selectHydrateInventory)
   const hydrateWorldSession = useAppStore(gameScreenSelectors.selectHydrateWorldSession)
@@ -244,27 +238,6 @@ export function GameScreen() {
   const tickSimulation = useAppStore(gameScreenSelectors.selectTickSimulation)
   const resetAllProgress = useAppStore(gameScreenSelectors.selectResetAllProgress)
   const activeQuestRewardNotification = questRewardNotifications[0] ?? null
-  const cloudSignedIn = cloudUserId !== null
-  const canCloudSave = cloudSavesEnabled && cloudSignedIn && sessionStarted
-  const canCloudLoad = cloudSavesEnabled && cloudSignedIn && cloudHasSave
-  const requiresStartupSignIn = cloudSavesEnabled && !cloudSignedIn && runtimeOverlayMode === 'mainMenu'
-
-  const refreshCloudSaveMetadata = useCallback(async () => {
-    if (!cloudSavesEnabled || !cloudSignedIn) {
-      setCloudHasSave(false)
-      setCloudSaveUpdatedAt(null)
-      return
-    }
-
-    try {
-      const primarySave = await getPrimaryCloudSave()
-      setCloudHasSave(primarySave !== null)
-      setCloudSaveUpdatedAt(primarySave?.updatedAt ?? null)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to fetch cloud save metadata.'
-      setCloudErrorMessage(message)
-    }
-  }, [cloudSignedIn])
 
   const openGameMenuSection = useCallback((section: GameModalSection | null) => {
     if (section === null) {
@@ -296,8 +269,6 @@ export function GameScreen() {
   const continueSession = useCallback(() => {
     setRuntimeOverlayMode('running')
     setSessionStarted(true)
-    setCloudStatusMessage(null)
-    setCloudErrorMessage(null)
   }, [])
 
   const openMainMenu = useCallback(() => {
@@ -309,166 +280,15 @@ export function GameScreen() {
   }, [])
 
   const handleStartNewGame = useCallback(async () => {
-    setCloudStatusMessage(null)
-    setCloudErrorMessage(null)
-
     requestMainMenuAutostart()
     await resetAllProgress()
   }, [resetAllProgress])
-
-  const handleCloudSave = useCallback(async () => {
-    if (!canCloudSave) {
-      setCloudErrorMessage(cloudSavesEnabled
-        ? 'Sign in and start a session before saving to cloud.'
-        : 'Cloud saves are disabled in this build.')
-      setCloudStatusMessage(null)
-      return
-    }
-
-    setCloudBusy(true)
-    setCloudErrorMessage(null)
-    setCloudStatusMessage(null)
-    try {
-      const payload = await buildCloudSavePayloadFromState(useAppStore.getState())
-      const saved = await savePrimaryCloudSave(payload)
-      setCloudHasSave(true)
-      setCloudSaveUpdatedAt(saved.updatedAt)
-      setCloudStatusMessage('Cloud save updated.')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Cloud save failed.'
-      setCloudErrorMessage(message)
-    } finally {
-      setCloudBusy(false)
-    }
-  }, [canCloudSave])
-
-  const handleCloudLoad = useCallback(async () => {
-    if (!canCloudLoad) {
-      setCloudErrorMessage(cloudSavesEnabled
-        ? 'No cloud save is currently available to load.'
-        : 'Cloud saves are disabled in this build.')
-      setCloudStatusMessage(null)
-      return
-    }
-
-    setCloudBusy(true)
-    setCloudErrorMessage(null)
-    setCloudStatusMessage(null)
-    try {
-      const primary = await getPrimaryCloudSave()
-      if (!primary) {
-        setCloudHasSave(false)
-        setCloudSaveUpdatedAt(null)
-        setCloudErrorMessage('No cloud save found.')
-        return
-      }
-
-      if (!isCloudSavePayloadV1(primary.payload)) {
-        setCloudErrorMessage('Cloud save payload is invalid or incompatible with this build.')
-        return
-      }
-
-      await applyCloudSavePayload(primary.payload)
-      if (typeof window !== 'undefined') {
-        requestMainMenuAutostart()
-        window.location.replace(window.location.pathname + window.location.search + window.location.hash)
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Cloud load failed.'
-      setCloudErrorMessage(message)
-    } finally {
-      setCloudBusy(false)
-    }
-  }, [canCloudLoad])
-
-  const handleSendMagicLink = useCallback(async () => {
-    if (!cloudSavesEnabled) {
-      setCloudErrorMessage('Cloud saves are disabled in this build.')
-      return
-    }
-
-    setCloudBusy(true)
-    setCloudErrorMessage(null)
-    setCloudStatusMessage(null)
-    try {
-      await sendCloudMagicLink(cloudAuthEmail)
-      setCloudStatusMessage('Magic link sent. Check your inbox and return to the game tab.')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to send magic link.'
-      setCloudErrorMessage(message)
-    } finally {
-      setCloudBusy(false)
-    }
-  }, [cloudAuthEmail])
-
-  const handleCloudSignOut = useCallback(async () => {
-    if (!cloudSavesEnabled) {
-      return
-    }
-
-    setCloudBusy(true)
-    setCloudErrorMessage(null)
-    setCloudStatusMessage(null)
-    try {
-      await signOutCloudSave()
-      setCloudUserId(null)
-      setCloudUserEmail(null)
-      setCloudHasSave(false)
-      setCloudSaveUpdatedAt(null)
-      setCloudStatusMessage('Signed out from cloud saves.')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to sign out.'
-      setCloudErrorMessage(message)
-    } finally {
-      setCloudBusy(false)
-    }
-  }, [])
 
   useEffect(() => {
     if (runtimeOverlayMode === 'running') {
       setSessionStarted(true)
     }
   }, [runtimeOverlayMode])
-
-  useEffect(() => {
-    if (!cloudSavesEnabled) {
-      return
-    }
-
-    let disposed = false
-    const syncCurrentCloudUser = async () => {
-      const user = await getCloudSaveUser()
-      if (disposed) {
-        return
-      }
-
-      setCloudUserId(user?.id ?? null)
-      setCloudUserEmail(user?.email ?? null)
-      setCloudAuthEmail(user?.email ?? '')
-      setCloudErrorMessage(null)
-    }
-
-    void syncCurrentCloudUser()
-    const unsubscribe = subscribeCloudSaveAuth(({ user }) => {
-      if (disposed) {
-        return
-      }
-
-      setCloudUserId(user?.id ?? null)
-      setCloudUserEmail(user?.email ?? null)
-      setCloudAuthEmail(user?.email ?? '')
-      setCloudErrorMessage(null)
-    })
-
-    return () => {
-      disposed = true
-      unsubscribe()
-    }
-  }, [])
-
-  useEffect(() => {
-    void refreshCloudSaveMetadata()
-  }, [refreshCloudSaveMetadata])
 
   useEffect(() => {
     void hydrateInventory()
@@ -511,15 +331,6 @@ export function GameScreen() {
       }
 
       const key = event.key.toLowerCase()
-
-      if (requiresStartupSignIn) {
-        if (key === 'escape') {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-
-        return
-      }
 
       if (key === 'escape') {
         event.preventDefault()
@@ -637,7 +448,6 @@ export function GameScreen() {
     openGameMenuSection,
     openMainMenu,
     openPausedOverlay,
-    requiresStartupSignIn,
     runtimeOverlayMode,
     triggerConsumableSlot,
   ])
@@ -1193,48 +1003,12 @@ export function GameScreen() {
           </div>
         )}
 
-        {requiresStartupSignIn && (
-          <StartupSignInModal
-            cloudBusy={cloudBusy}
-            authEmail={cloudAuthEmail}
-            statusMessage={cloudStatusMessage}
-            errorMessage={cloudErrorMessage}
-            onAuthEmailChange={setCloudAuthEmail}
-            onSendMagicLink={() => {
-              void handleSendMagicLink()
-            }}
-          />
-        )}
-
-        {runtimeOverlayMode === 'mainMenu' && !requiresStartupSignIn && (
+        {runtimeOverlayMode === 'mainMenu' && (
           <MainMenuModal
             canContinue={sessionStarted}
-            canSave={canCloudSave}
-            canLoad={canCloudLoad}
-            cloudEnabled={cloudSavesEnabled}
-            cloudSignedIn={cloudSignedIn}
-            cloudBusy={cloudBusy}
-            cloudUserEmail={cloudUserEmail}
-            cloudSaveUpdatedAt={cloudSaveUpdatedAt}
-            authEmail={cloudAuthEmail}
-            statusMessage={cloudStatusMessage}
-            errorMessage={cloudErrorMessage}
-            onAuthEmailChange={setCloudAuthEmail}
             onContinue={continueSession}
             onStartNewGame={() => {
               void handleStartNewGame()
-            }}
-            onSave={() => {
-              void handleCloudSave()
-            }}
-            onLoad={() => {
-              void handleCloudLoad()
-            }}
-            onSendMagicLink={() => {
-              void handleSendMagicLink()
-            }}
-            onSignOut={() => {
-              void handleCloudSignOut()
             }}
           />
         )}
