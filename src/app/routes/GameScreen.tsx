@@ -14,6 +14,7 @@ import { GameModal, type GameModalSection } from '@components/GameModal'
 import { MainMenuModal } from '@components/MainMenuModal'
 import { QuestRewardModal } from '@components/QuestRewardModal'
 import { ShipStatusBar } from '@components/ShipStatusBar'
+import { StartupSignInModal } from '@components/StartupSignInModal'
 import { TargetLabelsOverlay } from '@components/TargetLabelsOverlay'
 import { DockSidebar, WorkspaceCustomizer } from '@app/routes/gameScreenLayoutPanels'
 import { workspacePresets } from '@app/routes/workspacePresets'
@@ -246,6 +247,7 @@ export function GameScreen() {
   const cloudSignedIn = cloudUserId !== null
   const canCloudSave = cloudSavesEnabled && cloudSignedIn && sessionStarted
   const canCloudLoad = cloudSavesEnabled && cloudSignedIn && cloudHasSave
+  const requiresStartupSignIn = cloudSavesEnabled && !cloudSignedIn && runtimeOverlayMode === 'mainMenu'
 
   const refreshCloudSaveMetadata = useCallback(async () => {
     if (!cloudSavesEnabled || !cloudSignedIn) {
@@ -510,6 +512,15 @@ export function GameScreen() {
 
       const key = event.key.toLowerCase()
 
+      if (requiresStartupSignIn) {
+        if (key === 'escape') {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+
+        return
+      }
+
       if (key === 'escape') {
         event.preventDefault()
         event.stopPropagation()
@@ -626,6 +637,7 @@ export function GameScreen() {
     openGameMenuSection,
     openMainMenu,
     openPausedOverlay,
+    requiresStartupSignIn,
     runtimeOverlayMode,
     triggerConsumableSlot,
   ])
@@ -1181,7 +1193,20 @@ export function GameScreen() {
           </div>
         )}
 
-        {runtimeOverlayMode === 'mainMenu' && (
+        {requiresStartupSignIn && (
+          <StartupSignInModal
+            cloudBusy={cloudBusy}
+            authEmail={cloudAuthEmail}
+            statusMessage={cloudStatusMessage}
+            errorMessage={cloudErrorMessage}
+            onAuthEmailChange={setCloudAuthEmail}
+            onSendMagicLink={() => {
+              void handleSendMagicLink()
+            }}
+          />
+        )}
+
+        {runtimeOverlayMode === 'mainMenu' && !requiresStartupSignIn && (
           <MainMenuModal
             canContinue={sessionStarted}
             canSave={canCloudSave}

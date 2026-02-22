@@ -13,6 +13,22 @@ Append-only running log for implementation-level changes, debugging outcomes, an
 ---
 
 ## 2026-02-22 - Codex
+- Summary: Added an email-first startup authentication gate for cloud builds, so first screen is now a dedicated sign-in modal before Main Menu.
+- Files:
+  - `src/app/routes/GameScreen.tsx`
+  - `src/components/StartupSignInModal.tsx`
+  - `docs/worklog.md`
+- Validation:
+  - `npm run lint` passed
+  - `npm run test` passed (143 tests)
+  - `npm run build` passed
+  - `npm run quality:check` passed
+  - `npm run wiki:check` passed
+- Follow-ups:
+  - Add dedicated “Resend Link” cooldown/feedback timer for startup sign-in UX polish.
+  - When OAuth is revisited, extend startup modal provider buttons behind a feature flag.
+
+## 2026-02-22 - Codex
 - Summary: Hardened startup/menu behavior so the app opens at Main Menu by default and only autostarts into running mode for a short-lived, explicit transition token (used by Start New Game and Cloud Load).
 - Files:
   - `src/app/routes/GameScreen.tsx`
