@@ -47,6 +47,7 @@ import type { DockSide, PanelId, WorkspacePreset } from '@state/types'
 type SceneView = 'space' | 'interior'
 type RuntimeOverlayMode = 'running' | 'paused' | 'mainMenu'
 const sceneFadeDurationMs = 220
+const mainMenuAutostartWindowMs = 30_000
 const sceneLoadingFallback = <div className="h-full w-full bg-black" />
 function resolvePublicAssetPath(relativePath: string): string {
   const trimmedPath = relativePath.replace(/^\/+/, '')
@@ -55,17 +56,39 @@ function resolvePublicAssetPath(relativePath: string): string {
 const defaultPlayerCommsImage = resolvePublicAssetPath('assets/portraits/player-default.svg')
 const cloudSavesEnabled = isCloudRepositoryEnabled()
 
+function requestMainMenuAutostart(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(MAIN_MENU_AUTOSTART_STORAGE_KEY, String(Date.now()))
+  } catch {
+    // Ignore storage failures and continue without autostart hint.
+  }
+}
+
 function resolveInitialRuntimeOverlayMode(): RuntimeOverlayMode {
   if (typeof window === 'undefined') {
     return 'mainMenu'
   }
 
-  const shouldAutostart = window.localStorage.getItem(MAIN_MENU_AUTOSTART_STORAGE_KEY) === '1'
+  const requestedAtRaw = window.localStorage.getItem(MAIN_MENU_AUTOSTART_STORAGE_KEY)
+  if (!requestedAtRaw) {
+    return 'mainMenu'
+  }
+
+  const requestedAtMs = Number.parseInt(requestedAtRaw, 10)
+  const shouldAutostart =
+    Number.isFinite(requestedAtMs)
+    && Date.now() - requestedAtMs <= mainMenuAutostartWindowMs
+
   if (shouldAutostart) {
     window.localStorage.removeItem(MAIN_MENU_AUTOSTART_STORAGE_KEY)
     return 'running'
   }
 
+  window.localStorage.removeItem(MAIN_MENU_AUTOSTART_STORAGE_KEY)
   return 'mainMenu'
 }
 
@@ -287,10 +310,7 @@ export function GameScreen() {
     setCloudStatusMessage(null)
     setCloudErrorMessage(null)
 
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(MAIN_MENU_AUTOSTART_STORAGE_KEY, '1')
-    }
-
+    requestMainMenuAutostart()
     await resetAllProgress()
   }, [resetAllProgress])
 
@@ -348,7 +368,7 @@ export function GameScreen() {
 
       await applyCloudSavePayload(primary.payload)
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(MAIN_MENU_AUTOSTART_STORAGE_KEY, '1')
+        requestMainMenuAutostart()
         window.location.replace(window.location.pathname + window.location.search + window.location.hash)
       }
     } catch (error) {

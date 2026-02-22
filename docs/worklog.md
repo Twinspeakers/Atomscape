@@ -13,6 +13,18 @@ Append-only running log for implementation-level changes, debugging outcomes, an
 ---
 
 ## 2026-02-22 - Codex
+- Summary: Hardened startup/menu behavior so the app opens at Main Menu by default and only autostarts into running mode for a short-lived, explicit transition token (used by Start New Game and Cloud Load).
+- Files:
+  - `src/app/routes/GameScreen.tsx`
+  - `docs/worklog.md`
+- Validation:
+  - `npm run lint` passed
+  - `npm run test` passed (143 tests)
+  - `npm run build` passed
+- Follow-ups:
+  - If desired, add a Settings toggle for “Auto-enter session after load/reset” to make this preference user-configurable.
+
+## 2026-02-22 - Codex
 - Summary: Fixed GitHub Pages runtime regressions by converting root-absolute asset paths to base-aware URLs and adjusting the Esc pause cycle so first Esc pauses only the Babylon scene while keeping UI/simulation flow active.
 - Files:
   - `src/app/routes/GameScreen.tsx`
