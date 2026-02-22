@@ -13,6 +13,23 @@ Append-only running log for implementation-level changes, debugging outcomes, an
 ---
 
 ## 2026-02-22 - Codex
+- Summary: Fixed GitHub Pages runtime regressions by converting root-absolute asset paths to base-aware URLs and adjusting the Esc pause cycle so first Esc pauses only the Babylon scene while keeping UI/simulation flow active.
+- Files:
+  - `src/app/routes/GameScreen.tsx`
+  - `src/wiki/pages/asteroid-mining.mdx`
+  - `src/wiki/pages/flight-basics.mdx`
+  - `index.html`
+  - `docs/worklog.md`
+- Validation:
+  - `npm run lint` passed
+  - `npm run test` passed (143 tests)
+  - `npm run build` passed
+  - `npm run quality:check` passed
+  - `npm run wiki:check` passed
+- Follow-ups:
+  - Consider introducing a shared `publicAsset()` helper for all wiki/game static URLs to prevent future base-path regressions.
+
+## 2026-02-22 - Codex
 - Summary: Added the runtime Main Menu flow (start/continue/save/load/settings) with Esc cycle behavior, wired Supabase auth + cloud persistence as a single primary save, and extracted route layout panel components to keep `GameScreen` within file-size guardrails.
 - Files:
   - `src/app/routes/GameScreen.tsx`

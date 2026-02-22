@@ -48,7 +48,11 @@ type SceneView = 'space' | 'interior'
 type RuntimeOverlayMode = 'running' | 'paused' | 'mainMenu'
 const sceneFadeDurationMs = 220
 const sceneLoadingFallback = <div className="h-full w-full bg-black" />
-const defaultPlayerCommsImage = '/assets/portraits/player-default.svg'
+function resolvePublicAssetPath(relativePath: string): string {
+  const trimmedPath = relativePath.replace(/^\/+/, '')
+  return `${import.meta.env.BASE_URL}${trimmedPath}`
+}
+const defaultPlayerCommsImage = resolvePublicAssetPath('assets/portraits/player-default.svg')
 const cloudSavesEnabled = isCloudRepositoryEnabled()
 
 function resolveInitialRuntimeOverlayMode(): RuntimeOverlayMode {
@@ -467,7 +471,7 @@ export function GameScreen() {
 
   useEffect(() => {
     const tickInterval = window.setInterval(() => {
-      if (runtimeOverlayMode === 'running') {
+      if (runtimeOverlayMode !== 'mainMenu') {
         tickSimulation()
       }
       setClockNowMs(Date.now())
@@ -509,7 +513,7 @@ export function GameScreen() {
         return
       }
 
-      if (runtimeOverlayMode !== 'running') {
+      if (runtimeOverlayMode === 'mainMenu') {
         return
       }
 
@@ -529,7 +533,7 @@ export function GameScreen() {
       const slotFromCode = slotByCode[event.code]
       const slot = slotFromKey ?? slotFromCode
 
-      if (slot) {
+      if (runtimeOverlayMode === 'running' && slot) {
         event.preventDefault()
         event.stopPropagation()
         triggerConsumableSlot(slot)
@@ -1141,7 +1145,7 @@ export function GameScreen() {
           <ShipStatusBar />
         </div>
 
-        {runtimeOverlayMode === 'running' && gameModalSection && (
+        {runtimeOverlayMode !== 'mainMenu' && gameModalSection && (
           <GameModal
             section={gameModalSection}
             onSectionChange={openGameMenuSection}
@@ -1150,10 +1154,9 @@ export function GameScreen() {
         )}
 
         {runtimeOverlayMode === 'paused' && (
-          <div className="pointer-events-auto absolute inset-0 z-[70] flex items-center justify-center bg-slate-950/35">
-            <div className="panel-shell rounded-lg px-4 py-2 text-center">
-              <p className="panel-heading">Paused</p>
-              <p className="ui-note mt-1">Press Esc again for Main Menu.</p>
+          <div className="pointer-events-none absolute left-1/2 top-[5.1rem] z-[70] -translate-x-1/2">
+            <div className="panel-shell rounded px-3 py-1.5 text-center">
+              <p className="ui-note">Scene paused. Press Esc again for Main Menu.</p>
             </div>
           </div>
         )}
@@ -1191,7 +1194,7 @@ export function GameScreen() {
           />
         )}
 
-        {runtimeOverlayMode === 'running' && activeQuestRewardNotification && (
+        {runtimeOverlayMode !== 'mainMenu' && activeQuestRewardNotification && (
           <QuestRewardModal
             notification={activeQuestRewardNotification}
             onClose={dismissQuestRewardNotification}
