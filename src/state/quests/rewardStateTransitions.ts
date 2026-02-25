@@ -1,4 +1,6 @@
 import {
+  FEED_THE_CREW_QUEST_ID,
+  galaxyBarAutomationSideQuest,
   firstContractSideQuest,
   mainQuestDefinitions,
   type QuestRewardDefinition,
@@ -15,8 +17,7 @@ import type {
 } from '@state/types'
 import type { TutorialCompletion } from './tutorialProgression'
 
-const FEED_CREW_QUEST_ID = 'main-feed-the-crew'
-const feedCrewQuest = mainQuestDefinitions.find((quest) => quest.id === FEED_CREW_QUEST_ID)
+const feedCrewQuest = mainQuestDefinitions.find((quest) => quest.id === FEED_THE_CREW_QUEST_ID)
 
 interface AppendLogOptions {
   logs: SimulationLogEntry[]
@@ -89,6 +90,7 @@ export interface QuestRewardTransitionState {
   pinnedQuestIds: string[]
   tutorialCompletion: TutorialCompletion
   credits: number
+  galaxyBarsCrafted: number
 }
 
 export interface QuestRewardTransitionResult {
@@ -189,10 +191,30 @@ export function applyQuestRewardTransitions(
     )
   }
 
+  if (state.galaxyBarsCrafted >= 100) {
+    completedQuestIds.add(galaxyBarAutomationSideQuest.id)
+    claimQuestRewards(
+      galaxyBarAutomationSideQuest.id,
+      galaxyBarAutomationSideQuest.title,
+      galaxyBarAutomationSideQuest.rewards,
+    )
+  }
+
   if (pinnedQuestIds.length > 0) {
     const nextPinnedQuestIds = pinnedQuestIds.filter((questId) => !completedQuestIds.has(questId))
     if (nextPinnedQuestIds.length !== pinnedQuestIds.length) {
       pinnedQuestIds = nextPinnedQuestIds
+      pinnedQuestIdsChanged = true
+    }
+  }
+
+  if (state.pinnedQuestIds.length > 0 && pinnedQuestIds.length === 0) {
+    const nextIncompleteMainQuestId = mainQuestDefinitions.find(
+      (quest) => !quest.stepIds.every((stepId) => state.tutorialCompletion[stepId]),
+    )?.id
+
+    if (nextIncompleteMainQuestId) {
+      pinnedQuestIds = [nextIncompleteMainQuestId]
       pinnedQuestIdsChanged = true
     }
   }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_SHIP_TELEMETRY } from '@state/runtime/storeBootstrap'
+import { GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID } from '@features/quests/questDefinitions'
 import type {
   CrewStatus,
   RadarContact,
@@ -29,6 +30,8 @@ function createState(): BasicStateActionState {
   return {
     crewStatus,
     waterAutomationEnabled: false,
+    galaxyBarAutomationEnabled: false,
+    claimedQuestRewardIds: [],
     simulationLog: [],
     labActiveTab: 'sorting',
     selectedObject: null,
@@ -56,11 +59,35 @@ describe('basicStateActionBindings', () => {
 
     bindings.setFoodAutomationEnabled(true)
     bindings.setWaterAutomationEnabled(true)
+    bindings.setGalaxyBarAutomationEnabled(true)
 
     expect(state.crewStatus.foodAutomationEnabled).toBe(true)
     expect(state.waterAutomationEnabled).toBe(true)
-    expect(state.simulationLog[0]?.message).toContain('Crew hydration automation enabled')
-    expect(state.simulationLog[1]?.message).toContain('Crew food automation enabled')
+    expect(state.galaxyBarAutomationEnabled).toBe(false)
+    expect(state.simulationLog[0]?.message).toContain('Galaxy Bar automation remains locked')
+    expect(state.simulationLog[1]?.message).toContain('Crew hydration automation enabled')
+    expect(state.simulationLog[2]?.message).toContain('Crew food automation enabled')
+  })
+
+  it('enables galaxy bar automation after unlock reward is claimed', () => {
+    let state = createState()
+    state.claimedQuestRewardIds = [GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID]
+
+    const bindings = buildBasicStateActionBindings({
+      setWithState: (updater) => {
+        state = { ...state, ...updater(state) }
+      },
+      setPatch: (patch) => {
+        state = { ...state, ...patch }
+      },
+      appendLog,
+      sanitizePlayerUsername: (value) => String(value).trim() || 'fallback',
+    })
+
+    bindings.setGalaxyBarAutomationEnabled(true)
+
+    expect(state.galaxyBarAutomationEnabled).toBe(true)
+    expect(state.simulationLog[0]?.message).toContain('Galaxy Bar automation enabled')
   })
 
   it('applies direct patch setters and username sanitization', () => {

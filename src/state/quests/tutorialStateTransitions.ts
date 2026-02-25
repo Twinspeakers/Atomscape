@@ -38,6 +38,7 @@ export interface TutorialProgressTransitionState extends TutorialProgressState {
   tutorialCurrentStepIndex: number
   activeMainQuestId: string | null
   credits: number
+  galaxyBarsCrafted: number
 }
 
 interface ApplyTutorialProgressTransitionOptions {
@@ -151,6 +152,7 @@ export function applyTutorialProgressTransition(
       pinnedQuestIds,
       tutorialCompletion: evaluation.completion,
       credits: state.credits,
+      galaxyBarsCrafted: state.galaxyBarsCrafted,
     },
     {
       questRewardHistoryLimit: options.questRewardHistoryLimit,

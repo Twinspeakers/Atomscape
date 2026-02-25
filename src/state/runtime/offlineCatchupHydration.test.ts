@@ -28,6 +28,8 @@ function buildState(overrides: Partial<OfflineCatchupHydrationState> = {}): Offl
     crewAggregateMetrics: state.crewAggregateMetrics,
     fridge: state.fridge,
     waterAutomationEnabled: state.waterAutomationEnabled,
+    galaxyBarAutomationEnabled: state.galaxyBarAutomationEnabled,
+    galaxyBarsCrafted: state.galaxyBarsCrafted,
     stationDistance: state.stationDistance,
     simulationSummary: state.simulationSummary,
     simulationLog: state.simulationLog,

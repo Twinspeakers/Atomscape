@@ -52,11 +52,22 @@ describe('tutorialProgression', () => {
     expect(checklist.every((entry) => entry.completed === false)).toBe(true)
   })
 
-  it('advances early charging steps when prerequisites are met', () => {
-    const evaluation = evaluateTutorial(createBaseState({
+  it('advances early charging steps when docked charging prerequisites are met', () => {
+    const completion = createTutorialCompletion()
+    completion.lookAroundWithMouse = true
+    completion.strafeLeftAndRight = true
+    completion.strafeUpAndDown = true
+    completion.forwardReverseRun = true
+    completion.boostThroughRing = true
+    completion.lockOnTrainingDrone = true
+    completion.destroyTrainingDrone = true
+
+    const baseState = createBaseState({
       stationDistance: 0,
       labActiveTab: 'station',
+      docked: true,
       charging: true,
+      tutorialCompletion: completion,
       simulationSummary: {
         chargingRate: 1,
         containmentDrain: 0,
@@ -64,7 +75,9 @@ describe('tutorialProgression', () => {
         inRange: true,
         netEnergyPerSecond: 1,
       },
-    }))
+    })
+
+    const evaluation = evaluateTutorial(baseState)
 
     expect(evaluation.completion.approachStationForCharging).toBe(true)
     expect(evaluation.completion.openStationTabForCharging).toBe(true)

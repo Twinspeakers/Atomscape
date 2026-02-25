@@ -75,6 +75,7 @@ export function runSimulationTick(input: SimulationTickInput): SimulationTickRes
     crewDebuff: input.crewDebuff,
     crewStarving: input.crewStarving,
     foodAutomationEnabled: input.foodAutomationEnabled,
+    galaxyBarAutomationEnabled: input.galaxyBarAutomationEnabled ?? false,
     crewMembers: input.crewMembers ? input.crewMembers.map((member) => ({ ...member })) : undefined,
     fridge: input.fridge ? { ...input.fridge } : undefined,
     waterAutomationEnabled: input.waterAutomationEnabled,
@@ -119,9 +120,11 @@ export function runSimulationTick(input: SimulationTickInput): SimulationTickRes
     crewMembers: crewTick.crewMembers ?? mutable.crewMembers,
     fridge: mutable.fridge,
     waterAutomationEnabled: mutable.waterAutomationEnabled,
+    galaxyBarAutomationEnabled: mutable.galaxyBarAutomationEnabled,
     crewMetrics: crewTick.crewMetrics,
     fedCrew: crewTick.fedCrew,
     autoCraftedFood: crewTick.autoCraftedFood,
+    autoCraftedGalaxyBars: crewTick.autoCraftedGalaxyBars,
     crewCriticalFailure: crewTick.criticalFailure,
   }
 }

@@ -21,6 +21,7 @@ import {
 import {
   type CelestialRenderMode,
   DEFAULT_START_SECTOR_ID,
+  TRAINING_SECTOR_ID,
   resolveSectorCelestialConfig,
   resolveSectorDefinition,
   type SectorCelestialBodyConfig,
@@ -36,6 +37,7 @@ import {
   generateCleanupWorld,
   type CleanupTargetInstance,
 } from '@domain/world/cleanupCatalog'
+import { buildIntroSpaceScene } from './introSceneBuilder'
 import { buildYieldPreview } from './targetRendering'
 import type {
   AsteroidEntity,
@@ -117,8 +119,16 @@ export function buildSpaceScene(
   options?: BuildSpaceSceneOptions,
 ): SpaceSceneBuildResult {
   const sector = resolveSectorDefinition(options?.sectorId ?? DEFAULT_START_SECTOR_ID)
+  if (sector.id === TRAINING_SECTOR_ID) {
+    return buildIntroSpaceScene(scene, {
+      ...options,
+      sectorId: sector.id,
+    })
+  }
+
   const celestialConfig = resolveSectorCelestialConfig(sector.id)
   const toVector3 = (value: SectorVector3): Vector3 => new Vector3(value.x, value.y, value.z)
+  const toRadians = (degrees: number): number => (degrees * Math.PI) / 180
   const sunAnchorPosition = toVector3(celestialConfig.sunAnchorPosition)
   const sunLightDirection = sunAnchorPosition.scale(-1).normalize()
   const sunLight = new DirectionalLight('sun-light', sunLightDirection, scene)
@@ -132,6 +142,8 @@ export function buildSpaceScene(
   const ship = new TransformNode('ship-root', scene)
   ship.rotationQuaternion = Quaternion.Identity()
   ship.scaling = new Vector3(0.65, 0.65, 0.65)
+  ship.position.copyFrom(toVector3(sector.playerSpawnPosition))
+  ship.rotationQuaternion = Quaternion.FromEulerAngles(0, toRadians(sector.playerSpawnYawDegrees), 0)
   const shipHullMaterial = new StandardMaterial('ship-hull-material', scene)
   shipHullMaterial.diffuseColor = new Color3(0.13, 0.13, 0.15)
   shipHullMaterial.emissiveColor = new Color3(0.03, 0.03, 0.03)

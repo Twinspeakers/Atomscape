@@ -20,6 +20,7 @@ export const selectSetActiveCleanupZone = (state: AppState) => state.setActiveCl
 export const selectTutorialChecklist = (state: AppState) => state.tutorialChecklist
 export const selectTutorialCurrentStepIndex = (state: AppState) => state.tutorialCurrentStepIndex
 export const selectTutorialComplete = (state: AppState) => state.tutorialComplete
+export const selectClaimedQuestRewardIds = (state: AppState) => state.claimedQuestRewardIds
 export const selectQuestRewardNotifications = (state: AppState) => state.questRewardNotifications
 export const selectDismissQuestRewardNotification = (state: AppState) =>
   state.dismissQuestRewardNotification

@@ -16,7 +16,7 @@ import {
   STATION_DOCKING_RANGE_METERS,
 } from '@domain/spec/gameSpec'
 import type { CleanupZoneDefinition, CleanupZoneId } from '@domain/spec/worldSpec'
-import type { SectorId } from '@domain/spec/sectorSpec'
+import { TRAINING_SECTOR_ID, type SectorId } from '@domain/spec/sectorSpec'
 import { buildSpaceScene } from '@features/viewport/sceneBuilder'
 import { createViewportInputController } from '@features/viewport/inputController'
 import {
@@ -24,6 +24,7 @@ import {
   buildSelectionFromAsteroid,
   buildSelectionFromExtractionNode,
 } from '@features/viewport/targetRendering'
+import { createTrainingScenarioController } from '@features/viewport/trainingScenarioController'
 import type {
   AsteroidEntity,
   DynamicCollisionBody,
@@ -35,13 +36,7 @@ import type {
   TargetLabelAnchor,
 } from '@features/viewport/types'
 
-export type {
-  CrosshairAimState,
-  CrosshairFeedback,
-  ShipCollisionEvent,
-  StationFeedbackEvent,
-} from '@features/viewport/types'
-
+export type { CrosshairAimState, CrosshairFeedback, ShipCollisionEvent, StationFeedbackEvent } from '@features/viewport/types'
 interface PersistedFlightState {
   position: { x: number; y: number; z: number }
   rotation: { x: number; y: number; z: number; w: number }
@@ -50,7 +45,6 @@ interface PersistedFlightState {
   shotsFired: number
   fireCooldown: number
 }
-
 interface FlightDiagnosticsSettings {
   enabled: boolean
   cameraHardLock: boolean
@@ -136,6 +130,7 @@ export function SpaceViewport({
   docked = false,
   activeSectorId = 'earthCorridor',
   questFocusTarget = null,
+  currentTutorialStepId = null,
   worldSeed,
   depletedTargetIds = [],
   onTryFireLaser,
@@ -175,6 +170,7 @@ export function SpaceViewport({
   const chargingRef = useRef(charging)
   const dockedRef = useRef(docked)
   const questFocusTargetRef = useRef(questFocusTarget)
+  const currentTutorialStepIdRef = useRef<string | null>(currentTutorialStepId)
   const onTargetDepletedRef = useRef(onTargetDepleted)
   const onTryFireLaserRef = useRef(onTryFireLaser)
   const onExtractionHitRef = useRef(onExtractionHit)
@@ -234,6 +230,10 @@ export function SpaceViewport({
   useEffect(() => {
     questFocusTargetRef.current = questFocusTarget
   }, [questFocusTarget])
+
+  useEffect(() => {
+    currentTutorialStepIdRef.current = currentTutorialStepId
+  }, [currentTutorialStepId])
 
   useEffect(() => {
     onTargetDepletedRef.current = onTargetDepleted
@@ -365,6 +365,7 @@ export function SpaceViewport({
       depletedTargetIds: depletedTargetIdsRef.current,
       sectorId: activeSectorId,
     })
+    const isTrainingSector = activeSectorId === TRAINING_SECTOR_ID
 
     const questMarkerMaterial = new StandardMaterial('quest-marker-material', scene)
     questMarkerMaterial.diffuseColor = Color3.FromHexString('#78ef00')
@@ -429,9 +430,7 @@ export function SpaceViewport({
     const impactDamageScale = 0.34
     const maxImpactDamagePerStep = 8
     const stationCoreCollisionRadius = 4.35
-    const arenaHalfWidth = 420
-    const arenaHalfHeight = 160
-    const arenaHalfDepth = 420
+    const [arenaHalfWidth, arenaHalfHeight, arenaHalfDepth] = isTrainingSector ? [1800, 620, 1800] : [420, 160, 420]
     const fixedStepSeconds = 1 / 60
     const maxFixedStepsPerFrame = 6
     const maxFrameDeltaSeconds = 0.1
@@ -453,8 +452,10 @@ export function SpaceViewport({
     const orientationMatrix = Matrix.Identity()
     const orientationForward = Vector3.Zero()
     const orientationRight = Vector3.Zero()
+    const previousOrientationRight = Vector3.Zero()
     const orientationUp = Vector3.Zero()
-    const pitchLimit = Math.PI * 0.49
+    // Keep pitch away from near-vertical singularities that can flip orientation/camera.
+    const pitchLimit = Math.PI * 0.4
     let yawAngle = 0
     let pitchAngle = 0
     const aimRange = 430
@@ -484,6 +485,9 @@ export function SpaceViewport({
     const collisionDelta = Vector3.Zero()
     const collisionNormal = Vector3.Zero()
     const collisionFallbackAxis = new Vector3(0, 1, 0)
+    const isAsteroidActive = (asteroid: AsteroidEntity): boolean => (
+      !asteroid.mesh.isDisposed() && asteroid.mesh.isEnabled()
+    )
 
     let lastTelemetryPush = 0
     let lastStationFeedbackPush = 0
@@ -502,6 +506,19 @@ export function SpaceViewport({
       extractionNodes.map((node) => [node.mesh.id, node] as const),
     )
     const pendingDepletedTargetIds = new Set<string>()
+    const shipSpawnPosition = ship.position.clone()
+    const shipSpawnRotation = (ship.rotationQuaternion ?? Quaternion.Identity()).clone()
+    const shipSpawnRotationMatrix = Matrix.Identity()
+    shipSpawnRotation.toRotationMatrix(shipSpawnRotationMatrix)
+    const shipSpawnForward = Vector3.TransformNormal(new Vector3(0, 0, 1), shipSpawnRotationMatrix).normalize()
+    const trainingScenario = createTrainingScenarioController({
+      scene,
+      enabled: isTrainingSector,
+      asteroids,
+      asteroidByTargetId,
+      shipSpawnPosition,
+      shipForward: shipSpawnForward,
+    })
 
     const resolveCameraRig = (zoomLevel: number) => {
       const zoom = clamp(zoomLevel, minCameraZoom, maxCameraZoom)
@@ -535,22 +552,23 @@ export function SpaceViewport({
       shotsFired = persistedFlightState.shotsFired
       fireCooldown = Math.max(0, persistedFlightState.fireCooldown)
 
-      const { forward, up } = shipBasis(ship)
+      const { forward } = shipBasis(ship)
       const cameraRig = resolveCameraRig(cameraZoomCurrent)
       camera.position.copyFrom(
         ship.position
           .subtract(forward.scale(cameraRig.backDistance))
-          .add(up.scale(cameraRig.upDistance)),
+          .add(worldUpAxis.scale(cameraRig.upDistance)),
       )
       camera.setTarget(
         ship.position
           .add(forward.scale(cameraRig.lookAheadDistance))
-          .subtract(up.scale(cameraRig.lookDownOffset)),
+          .subtract(worldUpAxis.scale(cameraRig.lookDownOffset)),
       )
       persistedFlightStateRef.current = null
     }
 
     const syncOrientationFromAngles = () => {
+      previousOrientationRight.copyFrom(orientationRight)
       const cosPitch = Math.cos(pitchAngle)
       orientationForward.copyFromFloats(
         Math.sin(yawAngle) * cosPitch,
@@ -564,11 +582,21 @@ export function SpaceViewport({
 
       orientationRight.copyFrom(Vector3.Cross(worldUpAxis, orientationForward))
       if (orientationRight.lengthSquared() <= 0.0001) {
-        const fallbackBasis = shipBasis(ship)
-        orientationRight.copyFrom(fallbackBasis.right)
+        if (previousOrientationRight.lengthSquared() > 0.0001) {
+          orientationRight.copyFrom(previousOrientationRight)
+        } else {
+          const fallbackBasis = shipBasis(ship)
+          orientationRight.copyFrom(fallbackBasis.right)
+        }
       }
       if (orientationRight.lengthSquared() <= 0.0001) {
         orientationRight.copyFromFloats(1, 0, 0)
+      }
+      if (
+        previousOrientationRight.lengthSquared() > 0.0001
+        && Vector3.Dot(orientationRight, previousOrientationRight) < 0
+      ) {
+        orientationRight.scaleInPlace(-1)
       }
       orientationRight.normalize()
 
@@ -830,17 +858,15 @@ export function SpaceViewport({
     }
 
     const resetShipState = () => {
-      ship.position.copyFromFloats(0, 0, 0)
+      ship.position.copyFrom(shipSpawnPosition)
       shipVelocity.setAll(0)
-      ship.rotationQuaternion = Quaternion.Identity()
-      yawAngle = 0
-      pitchAngle = 0
+      ship.rotationQuaternion = shipSpawnRotation.clone()
+      initializeAnglesFromShip()
       smoothedYawInput = 0
       smoothedPitchInput = 0
       persistentMiningEnabled = false
       lastPersistentMiningTogglePressed = false
       wasInsidePortalGate = false
-      syncOrientationFromAngles()
       shipHealth = 100
       extractionNodeCooldown = 0
       inputController.resetInputs()
@@ -857,6 +883,10 @@ export function SpaceViewport({
       let bestMatch: { asteroid: AsteroidEntity; distance: number; dot: number } | null = null
 
       for (const asteroid of asteroids) {
+        if (!isAsteroidActive(asteroid)) {
+          continue
+        }
+
         const toTarget = asteroid.mesh.position.subtract(origin)
         const distance = toTarget.length()
         if (distance <= 0.001 || distance > aimRange) {
@@ -1045,6 +1075,10 @@ export function SpaceViewport({
       let bestMatch: { asteroid: AsteroidEntity; distanceSquared: number } | null = null
 
       for (const asteroid of asteroids) {
+        if (!isAsteroidActive(asteroid)) {
+          continue
+        }
+
         if (asteroid.classId !== classId) {
           continue
         }
@@ -1155,6 +1189,10 @@ export function SpaceViewport({
       }> = []
 
       for (const asteroid of asteroids) {
+        if (!isAsteroidActive(asteroid)) {
+          continue
+        }
+
         const targetId = asteroid.targetId
         const worldOffset = new Vector3(0, asteroid.radius + 1.1, 0)
         const distanceFromShip = Vector3.Distance(ship.position, asteroid.mesh.position)
@@ -1476,9 +1514,7 @@ export function SpaceViewport({
         extractionNodeCooldown = Math.max(0, extractionNodeCooldown - deltaSeconds)
 
         const persistentMiningTogglePressed = pressedKeys.has('Equal')
-        if (persistentMiningTogglePressed && !lastPersistentMiningTogglePressed) {
-          persistentMiningEnabled = !persistentMiningEnabled
-        }
+        if (persistentMiningTogglePressed && !lastPersistentMiningTogglePressed) persistentMiningEnabled = !persistentMiningEnabled
         lastPersistentMiningTogglePressed = persistentMiningTogglePressed
 
         const thrustInput = (pressedKeys.has('KeyW') ? 1 : 0) - (pressedKeys.has('KeyS') ? 1 : 0)
@@ -1537,6 +1573,18 @@ export function SpaceViewport({
         if (speed > maxSpeed) {
           shipVelocity.scaleInPlace(maxSpeed / speed)
         }
+        trainingScenario.registerInput({
+          currentStepId: currentTutorialStepIdRef.current,
+          lookInputX: steeringInput.x,
+          lookInputY: steeringInput.y,
+          thrustInput,
+          strafeInput,
+          verticalInput,
+          speed: shipVelocity.length(),
+          boosting,
+          shipPosition: ship.position,
+          shipForward: forward,
+        })
 
         updateThrusterFx({
           forward,
@@ -1546,6 +1594,7 @@ export function SpaceViewport({
           maxSpeed,
           boosting,
         })
+        trainingScenario.update(frameTimeMs, deltaSeconds, currentTutorialStepIdRef.current)
 
         let contactingDamageSource = false
         let maxImpactSpeed = 0
@@ -1572,6 +1621,10 @@ export function SpaceViewport({
           let hitStation = false
           let earliestHitT = 1
           for (const asteroid of asteroids) {
+            if (!isAsteroidActive(asteroid)) {
+              continue
+            }
+
             const startX = ship.position.x - asteroid.mesh.position.x
             const startY = ship.position.y - asteroid.mesh.position.y
             const startZ = ship.position.z - asteroid.mesh.position.z
@@ -1755,6 +1808,10 @@ export function SpaceViewport({
           let resolvedAny = false
 
           for (const asteroid of asteroids) {
+            if (!isAsteroidActive(asteroid)) {
+              continue
+            }
+
             collisionDelta.copyFrom(ship.position)
             collisionDelta.subtractInPlace(asteroid.mesh.position)
             const combinedRadius = shipCollisionRadius + asteroid.radius
@@ -1992,7 +2049,7 @@ export function SpaceViewport({
         if (pressedKeys.has('Space') && fireCooldown === 0) {
           if (onTryFireLaserRef.current()) {
             const lockedTarget = aimTargetId
-              ? asteroids.find((asteroid) => asteroid.mesh.id === aimTargetId) ?? null
+              ? asteroids.find((asteroid) => asteroid.mesh.id === aimTargetId && isAsteroidActive(asteroid)) ?? null
               : null
             const aimPoint = lockedTarget ? lockedTarget.mesh.position.clone() : resolveFallbackAimPoint()
             fireProjectile(aimPoint)
@@ -2028,9 +2085,28 @@ export function SpaceViewport({
 
           for (let asteroidIndex = asteroids.length - 1; asteroidIndex >= 0; asteroidIndex -= 1) {
             const asteroid = asteroids[asteroidIndex]
-            const collisionDistance = asteroid.radius + 0.22
+            if (!isAsteroidActive(asteroid)) {
+              continue
+            }
+
+            const collisionDistance = asteroid.radius + 0.22 + trainingScenario.resolveProjectileHitPadding(asteroid.targetId)
 
             if (Vector3.DistanceSquared(projectile.mesh.position, asteroid.mesh.position) <= collisionDistance * collisionDistance) {
+              const trainingHit = trainingScenario.handleDroneHit({
+                targetId: asteroid.targetId,
+                impactPosition: asteroid.mesh.position,
+              })
+              if (trainingHit.handled) {
+                onCrosshairFeedbackRef.current?.('hit')
+                if (trainingHit.destroyed) {
+                  removeAsteroidByIndex(asteroidIndex)
+                }
+                projectile.mesh.dispose()
+                projectiles.splice(projectileIndex, 1)
+                projectileConsumed = true
+                break
+              }
+
               onExtractionHitRef.current({
                 targetId: asteroid.targetId,
                 classId: asteroid.classId,
@@ -2067,7 +2143,7 @@ export function SpaceViewport({
           }
         }
 
-        if (maxImpactSpeed > impactDamageSpeedThreshold) {
+        if (!isTrainingSector && maxImpactSpeed > impactDamageSpeedThreshold) {
           const impactDamage = Math.min(
             maxImpactDamagePerStep,
             (maxImpactSpeed - impactDamageSpeedThreshold) * impactDamageScale,
@@ -2096,7 +2172,9 @@ export function SpaceViewport({
           }
         }
 
-        if (takingDamage) {
+        if (isTrainingSector) {
+          shipHealth = Math.min(100, shipHealth + deltaSeconds * 6)
+        } else if (takingDamage) {
           shipHealth = Math.max(0, shipHealth - deltaSeconds * 18)
         } else {
           shipHealth = Math.min(100, shipHealth + deltaSeconds * 3)
@@ -2112,7 +2190,7 @@ export function SpaceViewport({
           lastTelemetryPush = now
           const bestAimTarget = resolveAimTarget()
           const existingAimTarget = aimTargetId
-            ? asteroids.find((asteroid) => asteroid.mesh.id === aimTargetId) ?? null
+            ? asteroids.find((asteroid) => asteroid.mesh.id === aimTargetId && isAsteroidActive(asteroid)) ?? null
             : null
 
           let aimTarget: { asteroid: AsteroidEntity; distance: number; dot: number } | null = null
@@ -2138,6 +2216,7 @@ export function SpaceViewport({
             aimTarget = bestAimTarget
           }
 
+          trainingScenario.noteAimTarget(aimTarget?.asteroid.targetId ?? null)
           aimTargetId = aimTarget ? aimTarget.asteroid.mesh.id : null
           publishAimState({
             targetLocked: Boolean(aimTarget),
@@ -2145,13 +2224,18 @@ export function SpaceViewport({
           })
 
           const radarRange = 230
-          const contacts = buildRadarContacts(asteroids, extractionNodes, ship.position, radarRange)
+          const contacts = buildRadarContacts(
+            asteroids.filter((asteroid) => isAsteroidActive(asteroid)),
+            extractionNodes,
+            ship.position,
+            radarRange,
+          )
 
           onRadarContactsRef.current(contacts)
           onStationDistanceRef.current(stationDistance)
 
           if (selectedAsteroidId) {
-            const selectedAsteroid = asteroids.find((asteroid) => asteroid.mesh.id === selectedAsteroidId)
+            const selectedAsteroid = asteroids.find((asteroid) => asteroid.mesh.id === selectedAsteroidId && isAsteroidActive(asteroid))
             if (selectedAsteroid) {
               onSelectObjectRef.current(buildSelectionFromAsteroid(selectedAsteroid, ship.position))
             } else {
@@ -2160,16 +2244,24 @@ export function SpaceViewport({
                 onSelectObjectRef.current(
                   buildSelectionFromExtractionNode(selectedExtractionNode, ship.position),
                 )
+              } else {
+                selectObjectTarget(null)
               }
             }
           }
 
-          onTelemetryRef.current({
+          onTelemetryRef.current(trainingScenario.extendTelemetry({
             speed: shipVelocity.length(),
             health: shipHealth,
             attacks: shotsFired,
             cooldown: 1 - fireCooldown / fireIntervalSeconds,
-          })
+          }, {
+            lookInputX: steeringInput.x,
+            lookInputY: steeringInput.y,
+            strafeInput: (pressedKeys.has('KeyD') ? 1 : 0) - (pressedKeys.has('KeyA') ? 1 : 0),
+            verticalInput: (pressedKeys.has('KeyR') ? 1 : 0) - (pressedKeys.has('KeyF') ? 1 : 0),
+            targetLocked: Boolean(aimTarget),
+          }))
         }
       }
 
@@ -2208,10 +2300,10 @@ export function SpaceViewport({
       }
 
       const cameraRig = resolveCameraRig(cameraZoomCurrent)
-      const { forward, up } = shipBasis(ship)
+      const { forward } = shipBasis(ship)
       const desiredCameraPosition = ship.position
         .subtract(forward.scale(cameraRig.backDistance))
-        .add(up.scale(cameraRig.upDistance))
+        .add(worldUpAxis.scale(cameraRig.upDistance))
       if (diagnostics.cameraHardLock) {
         camera.position.copyFrom(desiredCameraPosition)
       } else {
@@ -2221,7 +2313,7 @@ export function SpaceViewport({
       camera.setTarget(
         ship.position
           .add(forward.scale(cameraRig.lookAheadDistance))
-          .subtract(up.scale(cameraRig.lookDownOffset)),
+          .subtract(worldUpAxis.scale(cameraRig.lookDownOffset)),
       )
 
       updateQuestFocusMarkers(rawFrameDeltaSeconds, frameTimeMs)

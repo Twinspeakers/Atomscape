@@ -12,6 +12,28 @@ Append-only running log for implementation-level changes, debugging outcomes, an
 
 ---
 
+## 2026-02-24 - Codex
+- Summary: Implemented Game Menu `Ship` section with a systems-deck UI, moved battery management/upgrades out of Laboratory, replaced laboratory abbreviation badges with real resource icons, rebuilt Live Outputs rows as icon+content, and rebalanced battery upgrades to require materially higher grind via nonlinear tier scaling.
+- Files:
+  - `src/state/types.ts`
+  - `src/app/routes/GameScreen.tsx`
+  - `src/components/GameModal.tsx`
+  - `src/components/TutorialOverlay.tsx`
+  - `src/components/overlay/ShipOverlay.tsx`
+  - `src/components/overlay/LaboratoryOverlay.tsx`
+  - `src/domain/spec/batteryUpgrade.ts`
+  - `src/state/simulation/crewConsumableTransitions.test.ts`
+  - `src/state/useAppStore.consumables.integration.test.ts`
+  - `docs/ui-ship-lab-systems-deck-plan-2026-02-24.md`
+  - `docs/README.md`
+  - `docs/worklog.md`
+- Validation:
+  - `npm run build` passed
+  - `npx vitest run src/state/simulation/crewConsumableTransitions.test.ts src/state/useAppStore.consumables.integration.test.ts src/state/simulation/resourceActionBindings.test.ts src/state/slices/appActionSlices.test.ts src/state/slices/appInitialState.test.ts --exclude scripts/.tmp/**` passed (18 tests)
+- Follow-ups:
+  - Evaluate process-specific icon assets (not output-resource-derived) for stronger machine identity.
+  - Add ship-upgrade milestone feedback (toast/badge) so high-cost upgrades feel more rewarding.
+
 ## 2026-02-22 - Codex
 - Summary: Fixed GitHub Pages base-path regression by adding Router basename support (`/Fun_with_Matter`) and forcing Supabase magic-link redirects to target `import.meta.env.BASE_URL` instead of transient current path.
 - Files:

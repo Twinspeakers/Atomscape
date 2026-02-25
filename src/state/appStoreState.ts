@@ -47,6 +47,8 @@ export interface AppState {
   crewAggregateMetrics: CrewAggregateMetrics
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  galaxyBarsCrafted: number
   radarContacts: RadarContact[]
   activeSectorId: SectorId
   worldStateLoaded: boolean
@@ -123,6 +125,7 @@ export interface AppState {
   runSteelIngotCaster: () => void
   runEnergyCellAssembler: () => void
   useEnergyCell: () => boolean
+  upgradeBatteryCapacity: () => boolean
   useConsumableSlot: (slotId: number) => boolean
   feedCrewGalaxyBar: () => void
   loadFridgeWater: (liters: number) => void
@@ -140,6 +143,7 @@ export interface AppState {
   setContainmentPower: (power: number) => void
   setFoodAutomationEnabled: (enabled: boolean) => void
   setWaterAutomationEnabled: (enabled: boolean) => void
+  setGalaxyBarAutomationEnabled: (enabled: boolean) => void
   setLabActiveTab: (tab: LabTab) => void
   setSelectedObject: (selection: SelectedObject | null) => void
   setPlayerUsername: (name: string) => void

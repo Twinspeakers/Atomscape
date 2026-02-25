@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CHARGE_SHIP_QUEST_ID,
+  CONTROL_SHIP_QUEST_ID,
   mainQuestDefinitions,
   tutorialStepDescriptors,
   type TutorialStepId,
@@ -15,9 +17,10 @@ function buildCompletion(): Record<TutorialStepId, boolean> {
 
 describe('quest progression invariants', () => {
   it('automatically unpins quests when they become completed', () => {
-    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-learning-charge')
+    const controlQuest = mainQuestDefinitions.find((quest) => quest.id === CONTROL_SHIP_QUEST_ID)
+    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === CHARGE_SHIP_QUEST_ID)
     const feedQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-feed-the-crew')
-    if (!learningQuest || !feedQuest) {
+    if (!controlQuest || !learningQuest || !feedQuest) {
       throw new Error('Expected main quests not found.')
     }
 
@@ -43,6 +46,7 @@ describe('quest progression invariants', () => {
       questRewardNotifications: [...initialState.questRewardNotifications],
       questRewardHistory: [...initialState.questRewardHistory],
       simulationLog: [...initialState.simulationLog],
+      galaxyBarsCrafted: initialState.galaxyBarsCrafted,
       inventory: { ...initialState.inventory },
       fridge: { ...initialState.fridge },
       atomCounter: { ...initialState.atomCounter },
@@ -50,6 +54,9 @@ describe('quest progression invariants', () => {
 
     try {
       const completion = buildCompletion()
+      controlQuest.stepIds.forEach((stepId) => {
+        completion[stepId] = true
+      })
       const checklist = tutorialStepDescriptors.map((step) => ({
         id: step.id,
         title: step.title,
@@ -85,6 +92,7 @@ describe('quest progression invariants', () => {
         claimedQuestRewardIds: [],
         questRewardNotifications: [],
         questRewardHistory: [],
+        galaxyBarsCrafted: 0,
       })
 
       const currentState = useAppStore.getState()
@@ -115,6 +123,7 @@ describe('quest progression invariants', () => {
         questRewardNotifications: originalSnapshot.questRewardNotifications,
         questRewardHistory: originalSnapshot.questRewardHistory,
         simulationLog: originalSnapshot.simulationLog,
+        galaxyBarsCrafted: originalSnapshot.galaxyBarsCrafted,
         inventory: originalSnapshot.inventory,
         fridge: originalSnapshot.fridge,
         atomCounter: originalSnapshot.atomCounter,
@@ -136,6 +145,7 @@ describe('quest progression invariants', () => {
       questRewardHistory: [...initialState.questRewardHistory],
       fridge: { ...initialState.fridge },
       simulationLog: [...initialState.simulationLog],
+      galaxyBarsCrafted: initialState.galaxyBarsCrafted,
       energy: initialState.energy,
       charging: initialState.charging,
       docked: initialState.docked,
@@ -145,10 +155,14 @@ describe('quest progression invariants', () => {
 
     try {
       const completion = buildCompletion()
-      const learningQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-learning-charge')
-      if (!learningQuest) {
+      const controlQuest = mainQuestDefinitions.find((quest) => quest.id === CONTROL_SHIP_QUEST_ID)
+      const learningQuest = mainQuestDefinitions.find((quest) => quest.id === CHARGE_SHIP_QUEST_ID)
+      if (!controlQuest || !learningQuest) {
         throw new Error('Expected main learning quest not found.')
       }
+      controlQuest.stepIds.forEach((stepId) => {
+        completion[stepId] = true
+      })
       learningQuest.stepIds.forEach((stepId) => {
         completion[stepId] = true
       })
@@ -184,6 +198,7 @@ describe('quest progression invariants', () => {
         claimedQuestRewardIds: [],
         questRewardNotifications: [],
         questRewardHistory: [],
+        galaxyBarsCrafted: 0,
         charging: true,
         docked: true,
         containmentOn: false,
@@ -215,6 +230,7 @@ describe('quest progression invariants', () => {
         questRewardHistory: originalSnapshot.questRewardHistory,
         fridge: originalSnapshot.fridge,
         simulationLog: originalSnapshot.simulationLog,
+        galaxyBarsCrafted: originalSnapshot.galaxyBarsCrafted,
         energy: originalSnapshot.energy,
         charging: originalSnapshot.charging,
         docked: originalSnapshot.docked,
@@ -238,6 +254,7 @@ describe('quest progression invariants', () => {
       questRewardHistory: [...initialState.questRewardHistory],
       fridge: { ...initialState.fridge },
       simulationLog: [...initialState.simulationLog],
+      galaxyBarsCrafted: initialState.galaxyBarsCrafted,
       energy: initialState.energy,
       charging: initialState.charging,
       docked: initialState.docked,
@@ -247,10 +264,14 @@ describe('quest progression invariants', () => {
 
     try {
       const completion = buildCompletion()
-      const learningQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-learning-charge')
-      if (!learningQuest) {
+      const controlQuest = mainQuestDefinitions.find((quest) => quest.id === CONTROL_SHIP_QUEST_ID)
+      const learningQuest = mainQuestDefinitions.find((quest) => quest.id === CHARGE_SHIP_QUEST_ID)
+      if (!controlQuest || !learningQuest) {
         throw new Error('Expected main learning quest not found.')
       }
+      controlQuest.stepIds.forEach((stepId) => {
+        completion[stepId] = true
+      })
       learningQuest.stepIds.forEach((stepId) => {
         completion[stepId] = true
       })
@@ -286,6 +307,7 @@ describe('quest progression invariants', () => {
         claimedQuestRewardIds: [],
         questRewardNotifications: [],
         questRewardHistory: [],
+        galaxyBarsCrafted: 0,
         charging: true,
         docked: true,
         containmentOn: false,
@@ -318,6 +340,7 @@ describe('quest progression invariants', () => {
         questRewardHistory: originalSnapshot.questRewardHistory,
         fridge: originalSnapshot.fridge,
         simulationLog: originalSnapshot.simulationLog,
+        galaxyBarsCrafted: originalSnapshot.galaxyBarsCrafted,
         energy: originalSnapshot.energy,
         charging: originalSnapshot.charging,
         docked: originalSnapshot.docked,
@@ -341,6 +364,7 @@ describe('quest progression invariants', () => {
       questRewardHistory: [...initialState.questRewardHistory],
       fridge: { ...initialState.fridge },
       simulationLog: [...initialState.simulationLog],
+      galaxyBarsCrafted: initialState.galaxyBarsCrafted,
       energy: initialState.energy,
       charging: initialState.charging,
       docked: initialState.docked,
@@ -350,10 +374,14 @@ describe('quest progression invariants', () => {
 
     try {
       const completion = buildCompletion()
-      const learningQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-learning-charge')
-      if (!learningQuest) {
+      const controlQuest = mainQuestDefinitions.find((quest) => quest.id === CONTROL_SHIP_QUEST_ID)
+      const learningQuest = mainQuestDefinitions.find((quest) => quest.id === CHARGE_SHIP_QUEST_ID)
+      if (!controlQuest || !learningQuest) {
         throw new Error('Expected main learning quest not found.')
       }
+      controlQuest.stepIds.forEach((stepId) => {
+        completion[stepId] = true
+      })
       learningQuest.stepIds.forEach((stepId) => {
         completion[stepId] = true
       })
@@ -389,6 +417,7 @@ describe('quest progression invariants', () => {
         claimedQuestRewardIds: [],
         questRewardNotifications: [],
         questRewardHistory: [],
+        galaxyBarsCrafted: 0,
         charging: true,
         docked: true,
         containmentOn: false,
@@ -418,6 +447,7 @@ describe('quest progression invariants', () => {
         questRewardHistory: originalSnapshot.questRewardHistory,
         fridge: originalSnapshot.fridge,
         simulationLog: originalSnapshot.simulationLog,
+        galaxyBarsCrafted: originalSnapshot.galaxyBarsCrafted,
         energy: originalSnapshot.energy,
         charging: originalSnapshot.charging,
         docked: originalSnapshot.docked,

@@ -32,6 +32,8 @@ export interface OfflineCatchupHydrationState {
   crewAggregateMetrics: CrewAggregateMetrics
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  galaxyBarsCrafted: number
   stationDistance: number
   simulationSummary: SimulationSummary
   simulationLog: SimulationLogEntry[]
@@ -51,6 +53,8 @@ export interface OfflineCatchupHydrationPatch {
   crewAggregateMetrics: CrewAggregateMetrics
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  galaxyBarsCrafted: number
   starvationFailureLock: boolean
   stationDistance: number
   simulationSummary: SimulationSummary
@@ -142,6 +146,8 @@ export function resolveOfflineCatchupHydration(
     crewAggregateMetrics: options.state.crewAggregateMetrics,
     fridge: options.state.fridge,
     waterAutomationEnabled: options.state.waterAutomationEnabled,
+    galaxyBarAutomationEnabled: options.state.galaxyBarAutomationEnabled,
+    galaxyBarsCrafted: options.state.galaxyBarsCrafted,
     stationDistance: options.state.stationDistance,
     simulationSummary: options.state.simulationSummary,
     simulationLog: options.state.simulationLog,
@@ -178,6 +184,8 @@ export function resolveOfflineCatchupHydration(
       crewAggregateMetrics: catchup.crewAggregateMetrics,
       fridge: catchup.fridge,
       waterAutomationEnabled: catchup.waterAutomationEnabled,
+      galaxyBarAutomationEnabled: catchup.galaxyBarAutomationEnabled,
+      galaxyBarsCrafted: catchup.galaxyBarsCrafted,
       starvationFailureLock: catchup.starvationFailureLock,
       stationDistance: catchup.stationDistance,
       simulationSummary: catchup.simulationSummary,

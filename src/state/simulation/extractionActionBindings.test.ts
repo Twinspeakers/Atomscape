@@ -1,5 +1,6 @@
 import { computeAtomTotals } from '@domain/resources/resourceCatalog'
 import { MINING_ASTEROID_RUBBLE_YIELD } from '@domain/spec/gameSpec'
+import { TRAINING_SECTOR_ID } from '@domain/spec/sectorSpec'
 import type {
   ExtractionEvent,
   ExtractionTargetPayload,
@@ -65,6 +66,7 @@ function createState(overrides: Partial<ExtractionActionState> = {}): Extraction
     atomCounter: computeAtomTotals(inventory),
     energy: 100,
     maxEnergy: 500,
+    activeSectorId: 'earthCorridor',
     stationDistance: 0,
     charging: false,
     containmentOn: false,
@@ -163,6 +165,56 @@ describe('extractionActionBindings', () => {
     expect(state.extractionEvents).toHaveLength(1)
     expect(persistInventorySnapshotSafely).toHaveBeenCalledWith(state.inventory)
     expect(updateTutorialProgress).toHaveBeenCalledOnce()
+  })
+
+  it('does not drain real energy when firing in the training sector', () => {
+    let state = createState({
+      activeSectorId: TRAINING_SECTOR_ID,
+      energy: 2,
+      maxEnergy: 500,
+    })
+    const updateTutorialProgress = vi.fn()
+    const persistInventorySnapshotSafely = vi.fn()
+    const applyTryFireMiningLaserTransition = vi.fn((input: { energy: number; maxEnergy: number }) => ({
+      kind: 'success' as const,
+      fired: true as const,
+      energy: input.energy - 5,
+      extractionEvents: [createExtractionEvent()],
+      simulationSummary: createSimulationSummary(),
+      nextLowPowerLogTime: 0,
+    }))
+
+    const bindings = buildExtractionActionBindings(
+      {
+        setState: (updater) => {
+          state = { ...state, ...updater(state) }
+        },
+        getState: () => state,
+        appendLog: ({ logs, message }) => [
+          { id: logs.length + 1, message, timestamp: logs.length + 1 },
+          ...logs,
+        ],
+        persistInventorySnapshotSafely,
+        updateTutorialProgress,
+      },
+      {
+        applyTryFireMiningLaserTransition:
+          applyTryFireMiningLaserTransition as unknown as ExtractionActionBindingDependencies['applyTryFireMiningLaserTransition'],
+      },
+    )
+
+    const fired = bindings.tryFireMiningLaser()
+
+    expect(fired).toBe(true)
+    expect(applyTryFireMiningLaserTransition).toHaveBeenCalledWith(
+      expect.objectContaining({ energy: 500 }),
+      0,
+      expect.any(Function),
+    )
+    expect(state.energy).toBe(2)
+    expect(state.extractionEvents).toHaveLength(1)
+    expect(updateTutorialProgress).not.toHaveBeenCalled()
+    expect(persistInventorySnapshotSafely).not.toHaveBeenCalled()
   })
 
   it('routes mineElement through recordExtractionHit with debug extraction payload', async () => {

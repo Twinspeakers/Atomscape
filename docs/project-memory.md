@@ -6,7 +6,7 @@ Single source of truth for current product direction, active systems, and short-
 ## Product Snapshot
 - Project: Space mining game SPA (React + TypeScript + Vite + Babylon.js)
 - Core loop: fly -> mine/salvage -> process into components -> manufacture goods -> support crew -> sell to market
-- Key UI model: movable/snap-enabled panels on left/right rails, centered top/bottom bars, and a Game Menu for Quests/Inventory/Laboratory/Crew/Wiki
+- Key UI model: movable/snap-enabled panels on left/right rails, centered top/bottom bars, and a Game Menu for Quests/Ship/Inventory/Laboratory/Crew/Wiki
 
 ## North Star
 - Build a "space industrial chain" game where matter is created by physically plausible processing:
@@ -137,6 +137,10 @@ Single source of truth for current product direction, active systems, and short-
 - Game Menu sections now include a dedicated `Crew` page between `Laboratory` and `Wiki`:
   - keyboard shortcut: `C`
   - surface includes live crew roster status, automation toggles, fridge state, and per-member bars
+- Game Menu now includes a dedicated `Ship` page between `Quests` and `Inventory`:
+  - keyboard shortcut: `H`
+  - battery/upgrade systems moved from Laboratory into a ship-focused systems deck
+  - battery upgrade economy now uses significantly higher, tier-scaling material costs to keep progression milestone-driven
 - Quest model alignment update:
   - Main Quest 1 `Learning To Charge` is now split into multiple steps (`approachStationForCharging`, `openStationTabForCharging`, `engageCharging`, `startCharging`)
   - quest rendering for sidebar panel and Game Menu/Quests now shares one source-of-truth builder (`buildQuestProgressModel`) to prevent drift between views
@@ -276,7 +280,7 @@ Single source of truth for current product direction, active systems, and short-
 - Cull stale points when updating this file so it remains current and short.
 
 ## Last Updated
-- Date: 2026-02-22
+- Date: 2026-02-24
 - Updated by: Codex
 
 ## Continuity Checkpoints

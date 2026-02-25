@@ -21,9 +21,19 @@ export interface WorldSessionRow {
   updatedAt: number
 }
 
+export interface SaveSlotRow {
+  id: number
+  name: string
+  updatedAt: number
+  payload: string
+  activeSectorId: SectorId
+  credits: number
+}
+
 class StellarMinerDatabase extends Dexie {
   inventory!: Table<InventoryRow, string>
   worldSession!: Table<WorldSessionRow, string>
+  saveSlots!: Table<SaveSlotRow, number>
 
   constructor() {
     super('stellar-miner-db')
@@ -33,6 +43,11 @@ class StellarMinerDatabase extends Dexie {
     this.version(2).stores({
       inventory: 'symbol,updatedAt',
       worldSession: 'id,updatedAt',
+    })
+    this.version(3).stores({
+      inventory: 'symbol,updatedAt',
+      worldSession: 'id,updatedAt',
+      saveSlots: 'id,updatedAt',
     })
   }
 }

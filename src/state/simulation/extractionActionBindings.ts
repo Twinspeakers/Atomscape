@@ -1,5 +1,6 @@
 import { computeAtomTotals } from '@domain/resources/resourceCatalog'
 import { MINING_ASTEROID_RUBBLE_YIELD } from '@domain/spec/gameSpec'
+import { TRAINING_SECTOR_ID, type SectorId } from '@domain/spec/sectorSpec'
 import {
   applyRecordExtractionHitTransition,
   applyTryFireMiningLaserTransition,
@@ -25,6 +26,7 @@ export interface ExtractionActionState {
   atomCounter: ReturnType<typeof computeAtomTotals>
   energy: number
   maxEnergy: number
+  activeSectorId?: SectorId
   stationDistance: number
   charging: boolean
   containmentOn: boolean
@@ -87,9 +89,10 @@ export function buildExtractionActionBindings(
       let fired = false
 
       options.setState((state) => {
+        const trainingFreeFire = state.activeSectorId === TRAINING_SECTOR_ID
         const transition = runtimeDependencies.applyTryFireMiningLaserTransition(
           {
-            energy: state.energy,
+            energy: trainingFreeFire ? state.maxEnergy : state.energy,
             maxEnergy: state.maxEnergy,
             crewDebuff: state.crewStatus.debuff,
             stationDistance: state.stationDistance,
@@ -108,7 +111,7 @@ export function buildExtractionActionBindings(
         if (transition.kind === 'success') {
           fired = true
           return {
-            energy: transition.energy,
+            energy: trainingFreeFire ? state.energy : transition.energy,
             extractionEvents: transition.extractionEvents,
             simulationSummary: transition.simulationSummary,
           }

@@ -18,6 +18,7 @@ import type {
   ExtractionEvent,
   LabTab,
   ResourceInventory,
+  ShipTelemetry,
   SimulationSummary,
   TutorialChecklistItem,
 } from '@state/types'
@@ -49,6 +50,7 @@ export interface TutorialProgressState {
   inventory: ResourceInventory
   simulationSummary: SimulationSummary
   extractionEvents: ExtractionEvent[]
+  shipTelemetry?: ShipTelemetry
   worldClassDestroyedCounts: Partial<Record<CleanupTargetClassId, number>>
   visitedCleanupZones: CleanupZoneId[]
   worldVisitedZoneIds: CleanupZoneId[]
@@ -76,14 +78,28 @@ function tutorialStepSatisfied(stepId: TutorialStepId, state: TutorialProgressSt
   )
 
   switch (stepId) {
+    case 'lookAroundWithMouse':
+      return Boolean(state.shipTelemetry?.trainingLookComplete)
+    case 'strafeLeftAndRight':
+      return Boolean(state.shipTelemetry?.trainingHorizontalStrafeComplete)
+    case 'strafeUpAndDown':
+      return Boolean(state.shipTelemetry?.trainingVerticalStrafeComplete)
+    case 'forwardReverseRun':
+      return Boolean(state.shipTelemetry?.trainingForwardReverseComplete)
+    case 'boostThroughRing':
+      return Boolean(state.shipTelemetry?.trainingBoostComplete)
+    case 'lockOnTrainingDrone':
+      return Boolean(state.shipTelemetry?.trainingDroneLockComplete)
+    case 'destroyTrainingDrone':
+      return Boolean(state.shipTelemetry?.trainingDroneDestroyed)
     case 'approachStationForCharging':
       return state.stationDistance <= CHARGING_RANGE_METERS
     case 'openStationTabForCharging':
       return state.stationDistance <= CHARGING_RANGE_METERS && state.labActiveTab === 'station'
     case 'engageCharging':
-      return state.stationDistance <= CHARGING_RANGE_METERS && state.charging
+      return state.docked && state.stationDistance <= CHARGING_RANGE_METERS && state.charging
     case 'startCharging':
-      return state.charging && state.simulationSummary.chargingRate > 0
+      return state.docked && state.charging && state.simulationSummary.chargingRate > 0
     case 'approachHighRiskZone':
       return (
         state.visitedCleanupZones.includes('highRiskSalvagePocket')
@@ -190,20 +206,20 @@ export function evaluateTutorial(state: TutorialProgressState): TutorialEvaluati
     }
   })
 
-  let stepIndex = currentTutorialStepIndex(completion)
-  while (stepIndex < tutorialStepDescriptors.length) {
-    const step = tutorialStepDescriptors[stepIndex]
-    if (!tutorialStepSatisfied(step.id, state)) {
+  while (true) {
+    const stepIndex = currentTutorialStepIndex(completion)
+    if (stepIndex >= tutorialStepDescriptors.length) {
       break
     }
 
-    if (!completion[step.id]) {
-      completion[step.id] = true
-      newlyCompleted.push(step.id)
-      changed = true
+    const step = tutorialStepDescriptors[stepIndex]
+    if (!tutorialStepSatisfied(step.id, state) || completion[step.id]) {
+      break
     }
 
-    stepIndex += 1
+    completion[step.id] = true
+    newlyCompleted.push(step.id)
+    changed = true
   }
 
   const currentStepIndex = currentTutorialStepIndex(completion)

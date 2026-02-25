@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { mainQuestDefinitions } from '@features/quests/questDefinitions'
+import {
+  galaxyBarAutomationSideQuest,
+  mainQuestDefinitions,
+} from '@features/quests/questDefinitions'
 import type { SimulationLogEntry } from '@state/types'
 import { createTutorialCompletion } from './tutorialProgression'
 import {
@@ -59,6 +62,7 @@ describe('rewardStateTransitions', () => {
         pinnedQuestIds: [firstQuest.id],
         tutorialCompletion: completion,
         credits: 0,
+        galaxyBarsCrafted: 0,
       },
       {
         questRewardHistoryLimit: 32,
@@ -69,6 +73,41 @@ describe('rewardStateTransitions', () => {
     expect(result.claimedQuestRewardIds).toContain(firstQuest.id)
     expect(result.questRewardNotifications.some((entry) => entry.questId === firstQuest.id)).toBe(true)
     expect(result.pinnedQuestIds).not.toContain(firstQuest.id)
+    expect(result.pinnedQuestIds).toContain(mainQuestDefinitions[1].id)
     expect(result.pinnedQuestIdsChanged).toBe(true)
+  })
+
+  it('claims the galaxy bar automation side quest after 100 crafted bars', () => {
+    const result = applyQuestRewardTransitions(
+      {
+        inventory: {},
+        sideQuestProgressInventory: {},
+        fridge: {
+          unlocked: false,
+          galaxyBars: 0,
+          capacity: 5,
+          waterLiters: 0,
+          waterCapacityLiters: 10,
+        },
+        simulationLog: [],
+        claimedQuestRewardIds: [],
+        questRewardNotifications: [],
+        questRewardHistory: [],
+        pinnedQuestIds: [galaxyBarAutomationSideQuest.id],
+        tutorialCompletion: createTutorialCompletion(),
+        credits: 0,
+        galaxyBarsCrafted: 100,
+      },
+      {
+        questRewardHistoryLimit: 32,
+      },
+      appendLog,
+    )
+
+    expect(result.claimedQuestRewardIds).toContain(galaxyBarAutomationSideQuest.id)
+    expect(result.questRewardNotifications.map((entry) => entry.questId)).toContain(
+      galaxyBarAutomationSideQuest.id,
+    )
+    expect(result.pinnedQuestIds).not.toContain(galaxyBarAutomationSideQuest.id)
   })
 })

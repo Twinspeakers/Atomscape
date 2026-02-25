@@ -8,6 +8,7 @@ export type PanelId = 'tutorial' | 'inventory' | 'object' | 'hud' | 'actions'
 export type DockSide = 'left' | 'right'
 export type GameMenuSection =
   | 'quests'
+  | 'ship'
   | 'inventory'
   | 'map'
   | 'laboratory'
@@ -85,6 +86,18 @@ export interface ShipTelemetry {
   health: number
   attacks: number
   cooldown: number
+  lookInputX?: number
+  lookInputY?: number
+  strafeInput?: number
+  verticalInput?: number
+  targetLocked?: boolean
+  trainingLookComplete?: boolean
+  trainingHorizontalStrafeComplete?: boolean
+  trainingVerticalStrafeComplete?: boolean
+  trainingForwardReverseComplete?: boolean
+  trainingBoostComplete?: boolean
+  trainingDroneLockComplete?: boolean
+  trainingDroneDestroyed?: boolean
 }
 
 export interface CrewStatus {

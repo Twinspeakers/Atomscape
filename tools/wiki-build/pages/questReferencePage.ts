@@ -1,6 +1,6 @@
 import {
-  firstContractSideQuest,
   mainQuestDefinitions,
+  sideQuestDefinitions,
   tutorialStepDescriptors,
 } from '../../../src/features/quests/questDefinitions.js'
 import { AUTO_GENERATED_HEADER, type GeneratedPage } from '../types.js'
@@ -56,17 +56,32 @@ export function buildQuestReferencePage(): GeneratedPage {
     })
     .join('\n\n')
 
-  const sideSteps = firstContractSideQuest.steps
-    .map(
-      (step, index) =>
-        [
-          `### Side Step ${index + 1}: ${step.title} (\`${step.id}\`)`,
-          '',
-          `- Description: ${step.description}`,
-          `- Detail: ${step.detail}`,
-          '',
-        ].join('\n'),
-    )
+  const sideSections = sideQuestDefinitions
+    .map((sideQuest) => {
+      const sideSteps = sideQuest.steps
+        .map(
+          (step, index) =>
+            [
+              `### Side Step ${index + 1}: ${step.title} (\`${step.id}\`)`,
+              '',
+              `- Description: ${step.description}`,
+              `- Detail: ${step.detail}`,
+              '',
+            ].join('\n'),
+        )
+        .join('\n')
+
+      return [
+        `### ${sideQuest.title} (\`${sideQuest.id}\`)`,
+        '',
+        `- Summary: ${sideQuest.summary}`,
+        '',
+        '- Rewards:',
+        ...sideQuest.rewards.map((reward) => `- ${reward.label}: ${reward.description}`),
+        '',
+        sideSteps,
+      ].join('\n')
+    })
     .join('\n')
 
   const content = [
@@ -77,14 +92,7 @@ export function buildQuestReferencePage(): GeneratedPage {
     '',
     mainSections,
     '## Side Quest',
-    `### ${firstContractSideQuest.title} (\`${firstContractSideQuest.id}\`)`,
-    '',
-    `- Summary: ${firstContractSideQuest.summary}`,
-    '',
-    '- Rewards:',
-    ...firstContractSideQuest.rewards.map((reward) => `- ${reward.label}: ${reward.description}`),
-    '',
-    sideSteps,
+    sideSections,
   ].join('\n')
 
   return {

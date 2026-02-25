@@ -13,6 +13,7 @@ Preserve project context across long sessions and context compaction.
 - `content/README.md`: content-pack structure, commands, and generated-registry workflow.
 - `docs/crew-systems-spec-v1.md`: locked v1 crew simulation spec (4 crew, hunger/thirst/sleep, fridge unlock).
 - `docs/quest-system-standard-v1.md`: quest architecture standards (source of truth, progression, rewards, UI parity, test gates).
+- `docs/ui-ship-lab-systems-deck-plan-2026-02-24.md`: approved UX implementation plan for Ship systems deck, Laboratory icon/readability pass, and battery progression challenge rebalance.
 - `docs/wiki-governance.md`: wiki ownership and synchronization workflow.
 - `docs/docs-governance.md`: retention and curation rules for all markdown docs.
 - `docs/tickets-viewport-v1.md`: concrete implementation tickets for Babylon viewport modernization.

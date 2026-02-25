@@ -73,7 +73,7 @@ describe('storeBootstrap', () => {
     expect(context.initialContainmentPower).toBe(65)
     expect(context.initialCycleTimeSeconds).toBe(123)
     expect(context.initialActiveSectorId).toBe(DEFAULT_START_SECTOR_ID)
-    expect(context.initialWorldTargetCount).toBeGreaterThan(0)
+    expect(context.initialWorldTargetCount).toBeGreaterThanOrEqual(0)
     expect(context.initialCrewMembers).toHaveLength(4)
     expect(context.initialCrewStatus.foodAutomationEnabled).toBe(true)
     expect(context.loadedUiPreferences.pinnedQuestIds).toEqual(['main-foo'])

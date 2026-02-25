@@ -31,6 +31,7 @@ export interface CrewSimulationState {
   crewDebuff: number
   crewStarving: boolean
   foodAutomationEnabled: boolean
+  galaxyBarAutomationEnabled?: boolean
   crewMembers?: CrewMemberState[]
   fridge?: FridgeState
   waterAutomationEnabled?: boolean
@@ -49,6 +50,7 @@ export interface SimulationTickInput extends StationDistanceState {
   crewDebuff: number
   crewStarving: boolean
   foodAutomationEnabled: boolean
+  galaxyBarAutomationEnabled?: boolean
   crewMembers?: CrewMemberState[]
   fridge?: FridgeState
   waterAutomationEnabled?: boolean
@@ -84,6 +86,8 @@ export interface SimulationTickResult {
   crewMembers?: CrewMemberState[]
   fridge?: FridgeState
   waterAutomationEnabled?: boolean
+  galaxyBarAutomationEnabled?: boolean
+  autoCraftedGalaxyBars?: number
   crewMetrics?: CrewAggregateMetrics
   fedCrew: boolean
   autoCraftedFood: boolean

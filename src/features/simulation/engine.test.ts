@@ -68,6 +68,35 @@ describe('simulation tick determinism', () => {
   })
 })
 
+describe('station charging invariants', () => {
+  it('forces charging off when undocked', () => {
+    const next = runSimulationTick({
+      inventory: {},
+      market: createMarketState(),
+      energy: 120,
+      maxEnergy: 200,
+      charging: true,
+      docked: false,
+      useSceneDistance: false,
+      stationDistanceScene: 0,
+      stationDistanceManual: 0,
+      containmentOn: false,
+      containmentPower: 0,
+      crewHunger: 100,
+      crewDebuff: 0,
+      crewStarving: false,
+      foodAutomationEnabled: false,
+      simulationLog: [],
+      now: 1_710_000_000_000,
+      random: () => 0.5,
+    })
+
+    expect(next.charging).toBe(false)
+    expect(next.simulationSummary.chargingRate).toBe(0)
+    expect(next.simulationLog[0]?.message).toContain('docking clamps disengaged')
+  })
+})
+
 describe('process execution invariants', () => {
   it('never allows energy above max or below zero', () => {
     const result = executeProcess(
@@ -212,7 +241,7 @@ describe('crew survival invariants', () => {
     expect(next.crewCriticalFailure).toBeNull()
   })
 
-  it('auto-crafts food when enabled and raw nutrition inputs are available', () => {
+  it('does not auto-craft food when only crew food automation is enabled', () => {
     const next = runSimulationTick({
       inventory: {
         cellulose: 3,
@@ -239,9 +268,42 @@ describe('crew survival invariants', () => {
       random: () => 0.5,
     })
 
-    expect(next.energy).toBeLessThan(120)
+    expect(next.energy).toBe(120)
     expect(next.inventory.galaxyBar ?? 0).toBe(0)
-    expect(next.crewHunger).toBeGreaterThan(70)
+    expect(next.crewHunger).toBeLessThanOrEqual(18)
+    expect(next.crewCriticalFailure).toBeNull()
+  })
+
+  it('auto-crafts galaxy bars when dedicated galaxy bar automation is enabled', () => {
+    const next = runSimulationTick({
+      inventory: {
+        cellulose: 3,
+        water: 2,
+        carbon: 1,
+        galaxyBar: 0,
+      },
+      market: createMarketState(),
+      energy: 120,
+      maxEnergy: 200,
+      charging: false,
+      docked: false,
+      useSceneDistance: false,
+      stationDistanceScene: 0,
+      stationDistanceManual: 100,
+      containmentOn: false,
+      containmentPower: 0,
+      crewHunger: 80,
+      crewDebuff: 0,
+      crewStarving: false,
+      foodAutomationEnabled: false,
+      galaxyBarAutomationEnabled: true,
+      simulationLog: [],
+      now: 1_710_000_000_000,
+      random: () => 0.5,
+    })
+
+    expect(next.energy).toBeLessThan(120)
+    expect(next.inventory.galaxyBar ?? 0).toBe(1)
     expect(next.crewCriticalFailure).toBeNull()
   })
 

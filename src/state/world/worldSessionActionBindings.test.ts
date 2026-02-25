@@ -1,4 +1,4 @@
-import { DEFAULT_START_SECTOR_ID } from '@domain/spec/sectorSpec'
+import { EARTH_CORRIDOR_SECTOR_ID, resolveSectorWorldTargetCount } from '@domain/spec/sectorSpec'
 import type { WorldSessionRow } from '@platform/db/gameDb'
 import type { SimulationLogEntry } from '@state/types'
 import { describe, expect, it, vi } from 'vitest'
@@ -19,13 +19,15 @@ function appendLog({ logs, message }: { logs: SimulationLogEntry[]; message: str
 }
 
 function createState(overrides: Partial<WorldSessionActionState> = {}): WorldSessionActionState {
+  const worldTargetCount = resolveSectorWorldTargetCount(EARTH_CORRIDOR_SECTOR_ID)
+
   return {
-    activeSectorId: DEFAULT_START_SECTOR_ID,
+    activeSectorId: EARTH_CORRIDOR_SECTOR_ID,
     worldStateLoaded: false,
     worldSeed: 'seed-a',
     worldDepletedTargetIds: [],
     worldDestroyedCount: 0,
-    worldRemainingCount: 38,
+    worldRemainingCount: worldTargetCount,
     worldVisitedZoneIds: [],
     worldZoneDestroyedCounts: {},
     worldClassDestroyedCounts: {},

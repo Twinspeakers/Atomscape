@@ -62,6 +62,7 @@ describe('stationControlTransitions', () => {
   it('refuses charging when station is out of range', () => {
     const transition = applyStartChargingTransition(
       createState({
+        docked: true,
         stationDistance: CHARGING_RANGE_METERS + 10,
       }),
       appendLog,
@@ -69,6 +70,19 @@ describe('stationControlTransitions', () => {
 
     expect(transition.charging).toBeUndefined()
     expect(transition.simulationLog?.[0]?.message).toContain('Charging refused')
+  })
+
+  it('refuses charging when undocked even if station is in range', () => {
+    const transition = applyStartChargingTransition(
+      createState({
+        docked: false,
+        stationDistance: 0,
+      }),
+      appendLog,
+    )
+
+    expect(transition.charging).toBeUndefined()
+    expect(transition.simulationLog?.[0]?.message).toContain('dock to station')
   })
 
   it('clamps containment power and recomputes simulation summary', () => {
@@ -97,5 +111,22 @@ describe('stationControlTransitions', () => {
     expect(transition.docked).toBe(true)
     expect(transition.stationDistance).toBe(0)
     expect(transition.simulationLog?.[0]?.message).toContain('Docking clamps engaged')
+  })
+
+  it('stops charging immediately when undocking', () => {
+    const transition = applyToggleDockedTransition(
+      createState({
+        docked: true,
+        charging: true,
+        stationDistance: 0,
+        stationDistanceScene: 0,
+        stationDistanceManual: 0,
+      }),
+      appendLog,
+    )
+
+    expect(transition.docked).toBe(false)
+    expect(transition.charging).toBe(false)
+    expect(transition.simulationLog?.[0]?.message).toContain('charging sequence stopped')
   })
 })

@@ -1,4 +1,57 @@
-export const DEFAULT_START_SECTOR_ID = 'earthCorridor';
+export const TRAINING_SECTOR_ID = 'flightTraining';
+export const EARTH_CORRIDOR_SECTOR_ID = 'earthCorridor';
+export const MARS_CORRIDOR_SECTOR_ID = 'marsCorridor';
+export const DEFAULT_START_SECTOR_ID = TRAINING_SECTOR_ID;
+const trainingOrbitZones = [
+    {
+        id: 'nearStationBelt',
+        label: 'Training Perimeter',
+        description: 'Quiet low-traffic perimeter reserved for basic flight drills.',
+        center: { x: 0, y: 0, z: 0 },
+        radius: 180,
+        targetCount: 0,
+        riskRating: 0.1,
+        classWeights: {
+            rockBody: 1,
+            metalScrap: 0,
+            compositeJunk: 0,
+            carbonRichAsteroid: 0,
+            volatileIceChunk: 0,
+        },
+    },
+    {
+        id: 'denseDebrisLane',
+        label: 'Training Drift Lane',
+        description: 'Empty drift lane used for strafing and boost control checks.',
+        center: { x: 180, y: 24, z: -140 },
+        radius: 160,
+        targetCount: 0,
+        riskRating: 0.1,
+        classWeights: {
+            rockBody: 1,
+            metalScrap: 0,
+            compositeJunk: 0,
+            carbonRichAsteroid: 0,
+            volatileIceChunk: 0,
+        },
+    },
+    {
+        id: 'highRiskSalvagePocket',
+        label: 'Training Outer Pocket',
+        description: 'Wide open pocket used to practice target tracking and laser firing.',
+        center: { x: -220, y: -30, z: 180 },
+        radius: 170,
+        targetCount: 0,
+        riskRating: 0.1,
+        classWeights: {
+            rockBody: 1,
+            metalScrap: 0,
+            compositeJunk: 0,
+            carbonRichAsteroid: 0,
+            volatileIceChunk: 0,
+        },
+    },
+];
 const earthCorridorZones = [
     {
         id: 'nearStationBelt',
@@ -100,6 +153,18 @@ const marsCorridorZones = [
     },
 ];
 export const sectorCatalog = {
+    flightTraining: {
+        id: 'flightTraining',
+        label: 'Intro Scene',
+        description: 'Dedicated onboarding scene for first-flight controls before entering live sectors.',
+        stationName: 'Intro Relay',
+        worldSeed: 'flight-training-v1',
+        celestialPreset: 'earthMoon',
+        portalExit: 'earthCorridor',
+        cleanupZones: trainingOrbitZones,
+        playerSpawnPosition: { x: -120, y: 8, z: -220 },
+        playerSpawnYawDegrees: 28.6,
+    },
     earthCorridor: {
         id: 'earthCorridor',
         label: 'Earth Corridor',
@@ -109,6 +174,8 @@ export const sectorCatalog = {
         celestialPreset: 'earthMoon',
         portalExit: 'marsCorridor',
         cleanupZones: earthCorridorZones,
+        playerSpawnPosition: { x: -145, y: 12, z: -210 },
+        playerSpawnYawDegrees: 34.8,
     },
     marsCorridor: {
         id: 'marsCorridor',
@@ -119,9 +186,12 @@ export const sectorCatalog = {
         celestialPreset: 'marsMoons',
         portalExit: 'earthCorridor',
         cleanupZones: marsCorridorZones,
+        playerSpawnPosition: { x: -112, y: 10, z: -178 },
+        playerSpawnYawDegrees: 32.2,
     },
 };
 export const orderedSectors = [
+    sectorCatalog.flightTraining,
     sectorCatalog.earthCorridor,
     sectorCatalog.marsCorridor,
 ];
@@ -364,7 +434,7 @@ const sectorCelestialConfigCatalog = {
     },
 };
 export function isSectorId(value) {
-    return value === 'earthCorridor' || value === 'marsCorridor';
+    return value === 'flightTraining' || value === 'earthCorridor' || value === 'marsCorridor';
 }
 export function resolveSectorDefinition(sectorId) {
     if (sectorId && sectorCatalog[sectorId]) {
@@ -377,5 +447,8 @@ export function resolveSectorWorldTargetCount(sectorId) {
     return sector.cleanupZones.reduce((sum, zone) => sum + zone.targetCount, 0);
 }
 export function resolveSectorCelestialConfig(sectorId) {
-    return sectorCelestialConfigCatalog[sectorId] ?? sectorCelestialConfigCatalog[DEFAULT_START_SECTOR_ID];
+    if (sectorId === TRAINING_SECTOR_ID) {
+        return sectorCelestialConfigCatalog[EARTH_CORRIDOR_SECTOR_ID];
+    }
+    return sectorCelestialConfigCatalog[sectorId];
 }

@@ -136,16 +136,20 @@ export function applyToggleDockedTransition(
 ): StationControlTransitionPatch {
   const docked = !state.docked
   const stationDistance = docked ? 0 : resolveStationDistance({ ...state, docked: false })
+  const charging = docked ? state.charging : false
 
   return {
     docked,
+    charging,
     stationDistance,
-    simulationSummary: buildSummary(state, { stationDistance }),
+    simulationSummary: buildSummary(state, { stationDistance, charging }),
     simulationLog: appendLog({
       logs: state.simulationLog,
       message: docked
         ? 'Docking clamps engaged: station distance pinned to 0 m.'
-        : 'Undocked: distance now follows live telemetry.',
+        : state.charging
+          ? 'Undocked: charging sequence stopped; distance now follows live telemetry.'
+          : 'Undocked: distance now follows live telemetry.',
     }),
   }
 }
@@ -154,6 +158,15 @@ export function applyStartChargingTransition(
   state: StationControlTransitionState,
   appendLog: AppendLog,
 ): StationControlTransitionPatch {
+  if (!state.docked) {
+    return {
+      simulationLog: appendLog({
+        logs: state.simulationLog,
+        message: 'Charging refused: dock to station before starting charge.',
+      }),
+    }
+  }
+
   if (state.stationDistance > CHARGING_RANGE_METERS) {
     return {
       simulationLog: appendLog({

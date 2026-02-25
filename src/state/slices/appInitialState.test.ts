@@ -75,6 +75,8 @@ function createBootstrapContext(
       waterCapacityLiters: 12,
     },
     initialWaterAutomationEnabled: true,
+    initialGalaxyBarAutomationEnabled: false,
+    initialGalaxyBarsCrafted: 0,
     ...overrides,
   }
 }
@@ -109,6 +111,7 @@ function createActionSlices(): AppActionSlices {
     },
     resourceActionBindings: {
       useEnergyCell: vi.fn(() => true),
+      upgradeBatteryCapacity: vi.fn(() => false),
       useConsumableSlot: vi.fn(() => false),
       feedCrewGalaxyBar: vi.fn(),
       loadFridgeWater: vi.fn(),
@@ -129,6 +132,7 @@ function createActionSlices(): AppActionSlices {
     basicStateActionBindings: {
       setFoodAutomationEnabled: vi.fn(),
       setWaterAutomationEnabled: vi.fn(),
+      setGalaxyBarAutomationEnabled: vi.fn(),
       setLabActiveTab: vi.fn(),
       setSelectedObject: vi.fn(),
       setPlayerUsername: vi.fn(),

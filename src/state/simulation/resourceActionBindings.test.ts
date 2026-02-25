@@ -141,6 +141,54 @@ describe('resourceActionBindings', () => {
     expect(updateTutorialProgress).toHaveBeenCalledOnce()
   })
 
+  it('upgrades battery capacity by consuming resources and persisting inventory', () => {
+    let state = createState()
+    const persistInventorySnapshotSafely = vi.fn()
+    const updateTutorialProgress = vi.fn()
+    const applyUpgradeBatteryCapacityTransition = vi.fn(() => ({
+      kind: 'success' as const,
+      inventory: {
+        ...state.inventory,
+        energyCell: 0,
+        steelIngot: 0,
+        carbon: 0,
+      },
+      energy: state.energy,
+      maxEnergy: 700,
+      simulationLog: [{ id: 2, message: 'battery upgraded', timestamp: 2 }],
+      persistInventory: true as const,
+      gainedCapacity: 500,
+    }))
+
+    const bindings = buildResourceActionBindings(
+      {
+        setState: (updater) => {
+          state = { ...state, ...updater(state) }
+        },
+        getState: () => state,
+        appendLog: ({ logs, message }) => [
+          { id: logs.length + 1, message, timestamp: logs.length + 1 },
+          ...logs,
+        ],
+        persistInventorySnapshotSafely,
+        updateTutorialProgress,
+        failureReportLimit: 5,
+      },
+      {
+        applyUpgradeBatteryCapacityTransition:
+          applyUpgradeBatteryCapacityTransition as unknown as typeof applyUpgradeBatteryCapacityTransition,
+      },
+    )
+
+    const upgraded = bindings.upgradeBatteryCapacity()
+
+    expect(upgraded).toBe(true)
+    expect(state.maxEnergy).toBe(700)
+    expect(state.inventory.energyCell).toBe(0)
+    expect(persistInventorySnapshotSafely).toHaveBeenCalledWith(state.inventory)
+    expect(updateTutorialProgress).toHaveBeenCalledOnce()
+  })
+
   it('updates tutorial progress for non-persist fridge load outcomes', () => {
     let state = createState()
     const persistInventorySnapshotSafely = vi.fn()

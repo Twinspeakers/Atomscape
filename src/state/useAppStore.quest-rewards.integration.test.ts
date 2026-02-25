@@ -1,6 +1,8 @@
 import { FRIDGE_UNLOCK_REWARD_GALAXY_BARS } from '@domain/spec/gameSpec'
 import { describe, expect, it } from 'vitest'
 import {
+  CHARGE_SHIP_QUEST_ID,
+  CONTROL_SHIP_QUEST_ID,
   firstContractSideQuest,
   mainQuestDefinitions,
   tutorialStepDescriptors,
@@ -17,9 +19,10 @@ function buildCompletion(): Record<TutorialStepId, boolean> {
 
 describe('quest reward delivery invariants', () => {
   it('unlocks and preloads fridge once for Feed The Crew reward', () => {
-    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-learning-charge')
+    const controlQuest = mainQuestDefinitions.find((quest) => quest.id === CONTROL_SHIP_QUEST_ID)
+    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === CHARGE_SHIP_QUEST_ID)
     const feedQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-feed-the-crew')
-    if (!learningQuest || !feedQuest) {
+    if (!controlQuest || !learningQuest || !feedQuest) {
       throw new Error('Expected main quests not found.')
     }
 
@@ -36,12 +39,16 @@ describe('quest reward delivery invariants', () => {
       questRewardHistory: [...initialState.questRewardHistory],
       fridge: { ...initialState.fridge },
       simulationLog: [...initialState.simulationLog],
+      galaxyBarsCrafted: initialState.galaxyBarsCrafted,
       energy: initialState.energy,
       containmentPower: initialState.containmentPower,
     }
 
     try {
       const completion = buildCompletion()
+      controlQuest.stepIds.forEach((stepId) => {
+        completion[stepId] = true
+      })
       learningQuest.stepIds.forEach((stepId) => {
         completion[stepId] = true
       })
@@ -73,7 +80,7 @@ describe('quest reward delivery invariants', () => {
         tutorialCurrentStepIndex: tutorialStepDescriptors.findIndex((step) => !completion[step.id]),
         tutorialCompletion: completion,
         tutorialChecklist: checklist,
-        claimedQuestRewardIds: [learningQuest.id],
+        claimedQuestRewardIds: [controlQuest.id, learningQuest.id],
         questRewardNotifications: [],
         questRewardHistory: [],
         fridge: {
@@ -94,6 +101,7 @@ describe('quest reward delivery invariants', () => {
           steelIngot: 0,
           energyCell: 0,
         },
+        galaxyBarsCrafted: 0,
         energy: Math.max(initialState.energy, 12),
       })
 
@@ -129,6 +137,7 @@ describe('quest reward delivery invariants', () => {
         questRewardHistory: originalSnapshot.questRewardHistory,
         fridge: originalSnapshot.fridge,
         simulationLog: originalSnapshot.simulationLog,
+        galaxyBarsCrafted: originalSnapshot.galaxyBarsCrafted,
         energy: originalSnapshot.energy,
         containmentPower: originalSnapshot.containmentPower,
       })
@@ -136,9 +145,10 @@ describe('quest reward delivery invariants', () => {
   })
 
   it('unlocks fridge and enqueues Feed The Crew reward modal when final craft step completes', () => {
-    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-learning-charge')
+    const controlQuest = mainQuestDefinitions.find((quest) => quest.id === CONTROL_SHIP_QUEST_ID)
+    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === CHARGE_SHIP_QUEST_ID)
     const feedQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-feed-the-crew')
-    if (!learningQuest || !feedQuest) {
+    if (!controlQuest || !learningQuest || !feedQuest) {
       throw new Error('Expected main quests not found.')
     }
 
@@ -155,6 +165,7 @@ describe('quest reward delivery invariants', () => {
       questRewardHistory: [...initialState.questRewardHistory],
       fridge: { ...initialState.fridge },
       simulationLog: [...initialState.simulationLog],
+      galaxyBarsCrafted: initialState.galaxyBarsCrafted,
       energy: initialState.energy,
       charging: initialState.charging,
       containmentOn: initialState.containmentOn,
@@ -165,6 +176,9 @@ describe('quest reward delivery invariants', () => {
 
     try {
       const completion = buildCompletion()
+      controlQuest.stepIds.forEach((stepId) => {
+        completion[stepId] = true
+      })
       learningQuest.stepIds.forEach((stepId) => {
         completion[stepId] = true
       })
@@ -198,7 +212,7 @@ describe('quest reward delivery invariants', () => {
         tutorialCurrentStepIndex: craftStepIndex,
         tutorialCompletion: completion,
         tutorialChecklist: checklist,
-        claimedQuestRewardIds: [learningQuest.id],
+        claimedQuestRewardIds: [controlQuest.id, learningQuest.id],
         questRewardNotifications: [],
         questRewardHistory: [],
         fridge: {
@@ -213,6 +227,7 @@ describe('quest reward delivery invariants', () => {
           cellulose: 2,
           galaxyBar: 0,
         },
+        galaxyBarsCrafted: 0,
         charging: false,
         containmentOn: false,
         docked: true,
@@ -245,6 +260,7 @@ describe('quest reward delivery invariants', () => {
         questRewardHistory: originalSnapshot.questRewardHistory,
         fridge: originalSnapshot.fridge,
         simulationLog: originalSnapshot.simulationLog,
+        galaxyBarsCrafted: originalSnapshot.galaxyBarsCrafted,
         energy: originalSnapshot.energy,
         charging: originalSnapshot.charging,
         containmentOn: originalSnapshot.containmentOn,
@@ -256,10 +272,11 @@ describe('quest reward delivery invariants', () => {
   })
 
   it('queues reward notifications in deterministic order and dismisses FIFO without duplicate re-claims', () => {
-    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-learning-charge')
+    const controlQuest = mainQuestDefinitions.find((quest) => quest.id === CONTROL_SHIP_QUEST_ID)
+    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === CHARGE_SHIP_QUEST_ID)
     const feedQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-feed-the-crew')
     const cleanupQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-orbital-cleanup-protocol')
-    if (!learningQuest || !feedQuest || !cleanupQuest) {
+    if (!controlQuest || !learningQuest || !feedQuest || !cleanupQuest) {
       throw new Error('Expected main quests not found.')
     }
 
@@ -276,7 +293,12 @@ describe('quest reward delivery invariants', () => {
       questRewardHistory: [...initialState.questRewardHistory],
       fridge: { ...initialState.fridge },
       simulationLog: [...initialState.simulationLog],
+      galaxyBarsCrafted: initialState.galaxyBarsCrafted,
       energy: initialState.energy,
+      stationDistance: initialState.stationDistance,
+      stationDistanceScene: initialState.stationDistanceScene,
+      stationDistanceManual: initialState.stationDistanceManual,
+      useSceneDistance: initialState.useSceneDistance,
       charging: initialState.charging,
       docked: initialState.docked,
       containmentOn: initialState.containmentOn,
@@ -336,6 +358,7 @@ describe('quest reward delivery invariants', () => {
           steelIngot: 0,
           energyCell: 0,
         },
+        galaxyBarsCrafted: 0,
         credits: 1,
         energy: Math.max(initialState.energy, 12),
         visitedCleanupZones: ['highRiskSalvagePocket'],
@@ -351,12 +374,14 @@ describe('quest reward delivery invariants', () => {
 
       const afterFirstClaim = useAppStore.getState()
       expect(afterFirstClaim.questRewardNotifications.map((entry) => entry.questId)).toEqual([
+        controlQuest.id,
         learningQuest.id,
         feedQuest.id,
         cleanupQuest.id,
         firstContractSideQuest.id,
       ])
       expect(afterFirstClaim.questRewardHistory.map((entry) => entry.questId)).toEqual([
+        controlQuest.id,
         learningQuest.id,
         feedQuest.id,
         cleanupQuest.id,
@@ -366,6 +391,7 @@ describe('quest reward delivery invariants', () => {
       afterFirstClaim.dismissQuestRewardNotification()
       const afterFirstDismiss = useAppStore.getState()
       expect(afterFirstDismiss.questRewardNotifications.map((entry) => entry.questId)).toEqual([
+        learningQuest.id,
         feedQuest.id,
         cleanupQuest.id,
         firstContractSideQuest.id,
@@ -375,11 +401,13 @@ describe('quest reward delivery invariants', () => {
 
       const afterSecondTick = useAppStore.getState()
       expect(afterSecondTick.questRewardNotifications.map((entry) => entry.questId)).toEqual([
+        learningQuest.id,
         feedQuest.id,
         cleanupQuest.id,
         firstContractSideQuest.id,
       ])
       expect(afterSecondTick.questRewardHistory.map((entry) => entry.questId)).toEqual([
+        controlQuest.id,
         learningQuest.id,
         feedQuest.id,
         cleanupQuest.id,
@@ -398,7 +426,12 @@ describe('quest reward delivery invariants', () => {
         questRewardHistory: originalSnapshot.questRewardHistory,
         fridge: originalSnapshot.fridge,
         simulationLog: originalSnapshot.simulationLog,
+        galaxyBarsCrafted: originalSnapshot.galaxyBarsCrafted,
         energy: originalSnapshot.energy,
+        stationDistance: originalSnapshot.stationDistance,
+        stationDistanceScene: originalSnapshot.stationDistanceScene,
+        stationDistanceManual: originalSnapshot.stationDistanceManual,
+        useSceneDistance: originalSnapshot.useSceneDistance,
         charging: originalSnapshot.charging,
         docked: originalSnapshot.docked,
         containmentOn: originalSnapshot.containmentOn,
@@ -413,10 +446,11 @@ describe('quest reward delivery invariants', () => {
   })
 
   it('auto-completes and rewards main quests when live state already satisfies all steps', () => {
-    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-learning-charge')
+    const controlQuest = mainQuestDefinitions.find((quest) => quest.id === CONTROL_SHIP_QUEST_ID)
+    const learningQuest = mainQuestDefinitions.find((quest) => quest.id === CHARGE_SHIP_QUEST_ID)
     const feedQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-feed-the-crew')
     const cleanupQuest = mainQuestDefinitions.find((quest) => quest.id === 'main-orbital-cleanup-protocol')
-    if (!learningQuest || !feedQuest || !cleanupQuest) {
+    if (!controlQuest || !learningQuest || !feedQuest || !cleanupQuest) {
       throw new Error('Expected main quests not found.')
     }
 
@@ -433,6 +467,7 @@ describe('quest reward delivery invariants', () => {
       questRewardHistory: [...initialState.questRewardHistory],
       fridge: { ...initialState.fridge },
       simulationLog: [...initialState.simulationLog],
+      galaxyBarsCrafted: initialState.galaxyBarsCrafted,
       energy: initialState.energy,
       charging: initialState.charging,
       docked: initialState.docked,
@@ -447,6 +482,9 @@ describe('quest reward delivery invariants', () => {
 
     try {
       const completion = buildCompletion()
+      controlQuest.stepIds.forEach((stepId) => {
+        completion[stepId] = true
+      })
       const checklist = tutorialStepDescriptors.map((step) => ({
         id: step.id,
         title: step.title,
@@ -467,6 +505,10 @@ describe('quest reward delivery invariants', () => {
         claimedQuestRewardIds: [],
         questRewardNotifications: [],
         questRewardHistory: [],
+        stationDistance: 0,
+        stationDistanceScene: 0,
+        stationDistanceManual: 0,
+        useSceneDistance: true,
         labActiveTab: 'station',
         charging: true,
         docked: true,
@@ -488,6 +530,7 @@ describe('quest reward delivery invariants', () => {
           hydrogenIonized: 1,
           boxOfSand: 1,
         },
+        galaxyBarsCrafted: 0,
         credits: 0,
         energy: Math.max(initialState.energy, 20),
         visitedCleanupZones: ['highRiskSalvagePocket'],
@@ -504,10 +547,11 @@ describe('quest reward delivery invariants', () => {
       const after = useAppStore.getState()
       expect(after.tutorialComplete).toBe(true)
       expect(after.claimedQuestRewardIds).toEqual(
-        expect.arrayContaining([learningQuest.id, feedQuest.id, cleanupQuest.id]),
+        expect.arrayContaining([controlQuest.id, learningQuest.id, feedQuest.id, cleanupQuest.id]),
       )
       expect(after.claimedQuestRewardIds).not.toContain(firstContractSideQuest.id)
       expect(after.questRewardHistory.map((entry) => entry.questId)).toEqual([
+        controlQuest.id,
         learningQuest.id,
         feedQuest.id,
         cleanupQuest.id,
@@ -525,6 +569,7 @@ describe('quest reward delivery invariants', () => {
         questRewardHistory: originalSnapshot.questRewardHistory,
         fridge: originalSnapshot.fridge,
         simulationLog: originalSnapshot.simulationLog,
+        galaxyBarsCrafted: originalSnapshot.galaxyBarsCrafted,
         energy: originalSnapshot.energy,
         charging: originalSnapshot.charging,
         docked: originalSnapshot.docked,

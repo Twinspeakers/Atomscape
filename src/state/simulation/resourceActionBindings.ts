@@ -4,6 +4,7 @@ import {
   applyFeedCrewGalaxyBarTransition,
   applyLoadFridgeGalaxyBarsTransition,
   applyLoadFridgeWaterTransition,
+  applyUpgradeBatteryCapacityTransition,
   applyUseEnergyCellTransition,
 } from '@state/simulation/crewConsumableTransitions'
 import { applyFailureTransition } from '@state/simulation/failureTransitions'
@@ -54,6 +55,7 @@ export interface ResourceActionState {
 
 export interface ResourceActionBindings {
   useEnergyCell: () => boolean
+  upgradeBatteryCapacity: () => boolean
   useConsumableSlot: (slotId: number) => boolean
   feedCrewGalaxyBar: () => void
   loadFridgeWater: (liters: number) => void
@@ -75,6 +77,7 @@ export interface BuildResourceActionBindingsOptions {
 
 export interface ResourceActionBindingDependencies {
   applyUseEnergyCellTransition: typeof applyUseEnergyCellTransition
+  applyUpgradeBatteryCapacityTransition: typeof applyUpgradeBatteryCapacityTransition
   applyFeedCrewGalaxyBarTransition: typeof applyFeedCrewGalaxyBarTransition
   applyLoadFridgeWaterTransition: typeof applyLoadFridgeWaterTransition
   applyLoadFridgeGalaxyBarsTransition: typeof applyLoadFridgeGalaxyBarsTransition
@@ -84,6 +87,7 @@ export interface ResourceActionBindingDependencies {
 
 const defaultResourceActionBindingDependencies: ResourceActionBindingDependencies = {
   applyUseEnergyCellTransition,
+  applyUpgradeBatteryCapacityTransition,
   applyFeedCrewGalaxyBarTransition,
   applyLoadFridgeWaterTransition,
   applyLoadFridgeGalaxyBarsTransition,
@@ -148,6 +152,46 @@ export function buildResourceActionBindings(
       }
 
       return used
+    },
+    upgradeBatteryCapacity: () => {
+      let upgraded = false
+      let persistInventory = false
+
+      options.setState((state) => {
+        const transition = runtimeDependencies.applyUpgradeBatteryCapacityTransition(
+          {
+            inventory: state.inventory,
+            energy: state.energy,
+            maxEnergy: state.maxEnergy,
+            simulationLog: state.simulationLog,
+          },
+          options.appendLog,
+        )
+
+        if (transition.kind === 'log-only') {
+          return {
+            simulationLog: transition.simulationLog,
+          }
+        }
+
+        upgraded = true
+        persistInventory = transition.persistInventory
+
+        return {
+          inventory: transition.inventory,
+          atomCounter: computeAtomTotals(transition.inventory),
+          energy: transition.energy,
+          maxEnergy: transition.maxEnergy,
+          simulationLog: transition.simulationLog,
+        }
+      })
+
+      if (persistInventory) {
+        options.persistInventorySnapshotSafely(options.getState().inventory)
+      }
+
+      options.updateTutorialProgress()
+      return upgraded
     },
     useConsumableSlot: (slotId) => {
       const normalizedSlot = Number.isFinite(slotId) ? Math.floor(slotId) : -1

@@ -7,6 +7,7 @@ import {
 } from '@domain/spec/sectorSpec'
 import { DEFAULT_WORLD_SEED } from '@domain/spec/worldSpec'
 import { createMarketState, type MarketState } from '@features/simulation/engine'
+import { GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID } from '@features/quests/questDefinitions'
 import { resourceIds } from '@domain/resources/resourceCatalog'
 import { initialDailyCrewSchedule } from '@state/crew/crewScheduleUtils'
 import {
@@ -52,6 +53,7 @@ export const DEFAULT_SHIP_TELEMETRY: ShipTelemetry = {
 }
 
 export const DEFAULT_WATER_AUTOMATION_ENABLED = true
+export const DEFAULT_GALAXY_BAR_AUTOMATION_ENABLED = false
 export const DEFAULT_PLAYER_USERNAME = 'Captain Orbit'
 
 export interface StoreBootstrapDependencies {
@@ -94,6 +96,8 @@ export interface StoreBootstrapContext {
   initialCrewAggregateMetrics: CrewAggregateMetrics
   initialFridge: FridgeState
   initialWaterAutomationEnabled: boolean
+  initialGalaxyBarAutomationEnabled: boolean
+  initialGalaxyBarsCrafted: number
 }
 
 export function createEmptyInventory(): ResourceInventory {
@@ -201,6 +205,14 @@ export function buildStoreBootstrapContext(
   const initialFridge = loadedRuntimeSnapshot.fridge ?? { ...DEFAULT_FRIDGE_STATE }
   const initialWaterAutomationEnabled =
     loadedRuntimeSnapshot.waterAutomationEnabled ?? DEFAULT_WATER_AUTOMATION_ENABLED
+  const galaxyBarAutomationUnlocked = (
+    loadedRuntimeSnapshot.claimedQuestRewardIds ?? []
+  ).includes(GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID)
+  const initialGalaxyBarAutomationEnabled =
+    galaxyBarAutomationUnlocked
+      ? loadedRuntimeSnapshot.galaxyBarAutomationEnabled ?? DEFAULT_GALAXY_BAR_AUTOMATION_ENABLED
+      : false
+  const initialGalaxyBarsCrafted = loadedRuntimeSnapshot.galaxyBarsCrafted ?? 0
 
   return {
     defaultMarketState,
@@ -228,6 +240,8 @@ export function buildStoreBootstrapContext(
     initialCrewAggregateMetrics,
     initialFridge,
     initialWaterAutomationEnabled,
+    initialGalaxyBarAutomationEnabled,
+    initialGalaxyBarsCrafted,
   }
 }
 

@@ -3,12 +3,48 @@
 
 This page is generated from quest definitions and updates with objective changes.
 
-## Main Quest: Learning To Charge (`main-learning-charge`)
+## Main Quest: Control The Ship (`main-control-the-ship`)
+
+- Summary: Complete baseline flight checks before entering live orbital operations.
+
+- Rewards:
+- Flight School Clearance: Unlocks Earth Corridor transfer authorization.
+
+### Step 1: Look Calibration Sweep (`lookAroundWithMouse`)
+- Description: Sweep your view left/right and up/down to calibrate camera control.
+- Hint: Move Mouse horizontally and vertically until this step clears.
+- Focus target: `space-viewport`
+### Step 2: Horizontal Strafe Check (`strafeLeftAndRight`)
+- Description: Use lateral thrusters to move left and right in control.
+- Hint: Press A, then D. Use the side marker props as reference.
+- Focus target: `space-viewport`
+### Step 3: Vertical Strafe Check (`strafeUpAndDown`)
+- Description: Use vertical thrusters to move up and down in control.
+- Hint: Press R, then F. Use the upper/lower marker props as reference.
+- Focus target: `space-viewport`
+### Step 4: Reverse + Return Ring Run (`forwardReverseRun`)
+- Description: Reverse through the training ring, then return forward through the same ring.
+- Hint: When this step starts, a ring deploys behind you. Press S through it, then W back through.
+- Focus target: `space-viewport`
+### Step 5: Boost Lane Burst (`boostThroughRing`)
+- Description: Engage boost and hold a short, stable forward burst through the boost lane.
+- Hint: Hold Shift + W until the step clears.
+- Focus target: `space-viewport`
+### Step 6: Acquire Target Lock (`lockOnTrainingDrone`)
+- Description: Aim at the training drone until crosshair lock engages.
+- Hint: Center the drone and hold aim until lock appears.
+- Focus target: `space-viewport`
+### Step 7: Controlled Firing Test (`destroyTrainingDrone`)
+- Description: Destroy the training drone with controlled shots.
+- Hint: Press Space to fire. Training shots are free.
+- Focus target: `space-viewport`
+
+## Main Quest: Charge The Ship (`main-charge-the-ship`)
 
 - Summary: Establish your first stable station charging loop.
 
 - Rewards:
-- Starter Material Cache: Adds 2 Iron Metal to Cargo.
+- Docking Shortcut Package: Unlocks E Dock + E Charge shortcuts; Adds 5 Energy Cells to Cargo.
 
 ### Step 1: Approach Charging Range (`approachStationForCharging`)
 - Description: Move within 50 m of the station so charging can activate.
@@ -23,19 +59,21 @@ Open Station.
 - Hint: Press P to open Station.
 - Focus target: `lab-start-charging`
 - Lab tab: `station`
-### Step 3: Engage Station Charging (`engageCharging`)
-- Description: Click Start Charging while in station range.
+### Step 3: Dock And Engage Charging (`engageCharging`)
+- Description: Dock to station, then click Start Charging while in range.
 - Detail: Stay within 50 m.
+Dock inside 50 m.
 Click Start Charging in Station controls.
-- Hint: Game Menu > Station > Start Charging
+- Hint: Dock first, then Game Menu > Station > Start Charging
 - Focus target: `lab-start-charging`
 - Lab tab: `station`
 ### Step 4: Confirm Charge Flow (`startCharging`)
-- Description: Confirm Charge/s is positive while charging remains active.
-- Detail: Keep charging turned on.
+- Description: Confirm Charge/s is positive while docked and charging remains active.
+- Detail: Keep docking clamps engaged.
+Keep charging turned on.
 Check Station telemetry.
 Confirm Charge/s is above 0.
-- Hint: If Charge/s is 0, move closer to the station.
+- Hint: If Charge/s is 0, verify you are still docked and charging is active.
 - Focus target: `lab-start-charging`
 - Lab tab: `station`
 

@@ -31,6 +31,7 @@ export interface CrewTickResult {
   inventoryChanged: boolean
   fedCrew: boolean
   autoCraftedFood: boolean
+  autoCraftedGalaxyBars: number
   criticalFailure: FailureReason | null
   crewMembers?: CrewMemberState[]
   crewMetrics?: CrewAggregateMetrics
@@ -130,14 +131,6 @@ function applySleepRotation(state: SimulationTickMutableState): CrewAggregateMet
 
 type GalaxyBarSource = 'fridge' | 'cargo'
 
-function hasGalaxyBarAvailable(state: SimulationTickMutableState): boolean {
-  if (state.fridge?.unlocked && (state.fridge.galaxyBars ?? 0) > 0) {
-    return true
-  }
-
-  return (state.inventory.galaxyBar ?? 0) > 0
-}
-
 function consumeGalaxyBar(state: SimulationTickMutableState): GalaxyBarSource | null {
   if (state.fridge?.unlocked && state.fridge.galaxyBars > 0) {
     state.fridge.galaxyBars = roundQty(
@@ -183,6 +176,11 @@ function consumeWaterDrink(state: SimulationTickMutableState): boolean {
 function attemptAutoCraftGalaxyBar(
   state: SimulationTickMutableState,
   pushLog: (message: string) => void,
+  options: {
+    logSuccess: boolean
+  } = {
+    logSuccess: true,
+  },
 ): { crafted: boolean; inventoryChanged: boolean } {
   const crafted = executeProcess(
     {
@@ -199,7 +197,7 @@ function attemptAutoCraftGalaxyBar(
 
   state.inventory = crafted.inventory
   state.energy = crafted.energy
-  if (crafted.logMessage) {
+  if (options.logSuccess && crafted.logMessage) {
     pushLog(`Auto-crafting: ${crafted.logMessage}`)
   }
 
@@ -216,14 +214,17 @@ function applyLegacyCrewSurvivalTick(
   let inventoryChanged = false
   let fedCrew = false
   let autoCraftedFood = false
+  let autoCraftedGalaxyBars = 0
+
+  if (state.galaxyBarAutomationEnabled) {
+    const automationCraftResult = attemptAutoCraftGalaxyBar(state, pushLog, { logSuccess: false })
+    if (automationCraftResult.crafted) {
+      autoCraftedGalaxyBars += 1
+    }
+    inventoryChanged = inventoryChanged || automationCraftResult.inventoryChanged
+  }
 
   if (state.foodAutomationEnabled && state.crewHunger <= CREW_FEED_THRESHOLD) {
-    if (!hasGalaxyBarAvailable(state)) {
-      const craftResult = attemptAutoCraftGalaxyBar(state, pushLog)
-      autoCraftedFood = craftResult.crafted
-      inventoryChanged = inventoryChanged || craftResult.inventoryChanged
-    }
-
     if (consumeGalaxyBar(state)) {
       fedCrew = true
       inventoryChanged = true
@@ -268,6 +269,7 @@ function applyLegacyCrewSurvivalTick(
     inventoryChanged,
     fedCrew,
     autoCraftedFood,
+    autoCraftedGalaxyBars,
     criticalFailure,
     crewMembers: state.crewMembers,
     crewMetrics: undefined,
@@ -381,12 +383,7 @@ function feedMemberScheduledMeal(
   }
 
   let inventoryChanged = false
-  let autoCraftedFood = false
-  if (!hasGalaxyBarAvailable(state)) {
-    const craftResult = attemptAutoCraftGalaxyBar(state, pushLog)
-    autoCraftedFood = craftResult.crafted
-    inventoryChanged = inventoryChanged || craftResult.inventoryChanged
-  }
+  const autoCraftedFood = false
 
   const firstBoostApplies = !member.firstGalaxyBarBoostApplied
   const hungerAfter = firstBoostApplies
@@ -490,6 +487,15 @@ function applyPerMemberCrewSurvivalTick(
   let inventoryChanged = false
   let fedCrew = false
   let autoCraftedFood = false
+  let autoCraftedGalaxyBars = 0
+
+  if (state.galaxyBarAutomationEnabled) {
+    const automationCraftResult = attemptAutoCraftGalaxyBar(state, pushLog, { logSuccess: false })
+    if (automationCraftResult.crafted) {
+      autoCraftedGalaxyBars += 1
+    }
+    inventoryChanged = inventoryChanged || automationCraftResult.inventoryChanged
+  }
 
   applySleepRotation(state)
 
@@ -553,7 +559,6 @@ function applyPerMemberCrewSurvivalTick(
       const mealResult = feedMemberScheduledMeal(state, member, activeMeal.label, pushLog)
       member = activeMeal.markServed(mealResult.member)
       fedCrew = fedCrew || mealResult.fed
-      autoCraftedFood = autoCraftedFood || mealResult.autoCraftedFood
       inventoryChanged = inventoryChanged || mealResult.inventoryChanged
     }
 
@@ -638,6 +643,7 @@ function applyPerMemberCrewSurvivalTick(
     inventoryChanged,
     fedCrew,
     autoCraftedFood,
+    autoCraftedGalaxyBars,
     criticalFailure,
     crewMembers: members,
     crewMetrics,

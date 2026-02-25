@@ -22,7 +22,7 @@ function appendLog({ logs, message }: { logs: { id: number; message: string; tim
 
 function createState(overrides?: Partial<TutorialProgressTransitionState>): TutorialProgressTransitionState {
   const completion = createTutorialCompletion()
-  return {
+  const state = {
     stationDistance: 0,
     labActiveTab: 'sorting',
     charging: false,
@@ -58,8 +58,12 @@ function createState(overrides?: Partial<TutorialProgressTransitionState>): Tuto
     tutorialCurrentStepIndex: 0,
     activeMainQuestId: mainQuestDefinitions[0]?.id ?? null,
     credits: 0,
+    galaxyBarsCrafted: 0,
     ...overrides,
-  }
+  } as TutorialProgressTransitionState
+
+  state.galaxyBarsCrafted = state.galaxyBarsCrafted ?? 0
+  return state
 }
 
 describe('tutorialStateTransitions', () => {

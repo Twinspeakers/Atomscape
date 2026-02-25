@@ -55,6 +55,8 @@ export interface RuntimeStateSnapshot {
   crewMembers: CrewMemberState[]
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  galaxyBarsCrafted: number
   crewFeedsDelivered: number
   market: MarketState
   labActiveTab: LabTab
@@ -81,6 +83,8 @@ export interface RuntimeSnapshotStateSource {
   crewMembers: CrewMemberState[]
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  galaxyBarsCrafted: number
   crewFeedsDelivered: number
   market: MarketState
   labActiveTab: LabTab
@@ -152,6 +156,14 @@ export function loadRuntimeSnapshot(options: LoadRuntimeSnapshotOptions): Partia
       typeof parsed.waterAutomationEnabled === 'boolean'
         ? parsed.waterAutomationEnabled
         : defaultWaterAutomationEnabled
+    const galaxyBarAutomationEnabled =
+      typeof parsed.galaxyBarAutomationEnabled === 'boolean'
+        ? parsed.galaxyBarAutomationEnabled
+        : false
+    const galaxyBarsCrafted = Math.max(
+      0,
+      Math.floor(normalizeNumber(parsed.galaxyBarsCrafted, 0)),
+    )
 
     return {
       playerUsername: sanitizePlayerUsername(parsed.playerUsername),
@@ -172,6 +184,8 @@ export function loadRuntimeSnapshot(options: LoadRuntimeSnapshotOptions): Partia
       crewMembers,
       fridge,
       waterAutomationEnabled,
+      galaxyBarAutomationEnabled,
+      galaxyBarsCrafted,
       crewFeedsDelivered: Math.max(0, Math.floor(normalizeNumber(parsed.crewFeedsDelivered, 0))),
       market: sanitizeMarketState(parsed.market, defaultMarket),
       labActiveTab: isLabTab(parsed.labActiveTab) ? parsed.labActiveTab : 'sorting',
@@ -251,6 +265,8 @@ export function buildRuntimeSnapshotFromState(
       ),
     },
     waterAutomationEnabled: state.waterAutomationEnabled,
+    galaxyBarAutomationEnabled: state.galaxyBarAutomationEnabled,
+    galaxyBarsCrafted: state.galaxyBarsCrafted,
     crewFeedsDelivered: state.crewFeedsDelivered,
     market: state.market,
     labActiveTab: state.labActiveTab,

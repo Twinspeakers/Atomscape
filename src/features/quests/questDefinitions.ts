@@ -17,6 +17,13 @@ import type { LabTab, ResourceInventory, TutorialChecklistItem } from '../../sta
 import type { ResourceId } from '@domain/resources/resourceCatalog'
 
 export type TutorialStepId =
+  | 'lookAroundWithMouse'
+  | 'strafeLeftAndRight'
+  | 'strafeUpAndDown'
+  | 'forwardReverseRun'
+  | 'boostThroughRing'
+  | 'lockOnTrainingDrone'
+  | 'destroyTrainingDrone'
   | 'approachStationForCharging'
   | 'openStationTabForCharging'
   | 'engageCharging'
@@ -106,6 +113,13 @@ export interface QuestProgressView {
   steps: QuestStepProgress[]
 }
 
+export const CONTROL_SHIP_QUEST_ID = 'main-control-the-ship'
+export const CHARGE_SHIP_QUEST_ID = 'main-charge-the-ship'
+export const FEED_THE_CREW_QUEST_ID = 'main-feed-the-crew'
+export const ORBITAL_CLEANUP_QUEST_ID = 'main-orbital-cleanup-protocol'
+export const FIRST_CONTRACT_SIDE_QUEST_ID = 'side-first-contract'
+export const GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID = 'side-galaxy-bar-manufacturing'
+
 const gameMenuPath = 'Game Menu'
 const laboratoryPath = `${gameMenuPath} > Laboratory`
 const stationPath = `${gameMenuPath} > Station`
@@ -115,6 +129,55 @@ const manufacturingPath = `${laboratoryPath} > Manufacture`
 const marketPath = `${gameMenuPath} > Store`
 
 export const tutorialStepDescriptors: TutorialStepDescriptor[] = [
+  {
+    id: 'lookAroundWithMouse',
+    title: 'Look Calibration Sweep',
+    description: 'Sweep your view left/right and up/down to calibrate camera control.',
+    hint: 'Move Mouse horizontally and vertically until this step clears.',
+    focusTarget: 'space-viewport',
+  },
+  {
+    id: 'strafeLeftAndRight',
+    title: 'Horizontal Strafe Check',
+    description: 'Use lateral thrusters to move left and right in control.',
+    hint: 'Press A, then D. Use the side marker props as reference.',
+    focusTarget: 'space-viewport',
+  },
+  {
+    id: 'strafeUpAndDown',
+    title: 'Vertical Strafe Check',
+    description: 'Use vertical thrusters to move up and down in control.',
+    hint: 'Press R, then F. Use the upper/lower marker props as reference.',
+    focusTarget: 'space-viewport',
+  },
+  {
+    id: 'forwardReverseRun',
+    title: 'Reverse + Return Ring Run',
+    description: 'Reverse through the training ring, then return forward through the same ring.',
+    hint: 'When this step starts, a ring deploys behind you. Press S through it, then W back through.',
+    focusTarget: 'space-viewport',
+  },
+  {
+    id: 'boostThroughRing',
+    title: 'Boost Lane Burst',
+    description: 'Engage boost and hold a short, stable forward burst through the boost lane.',
+    hint: 'Hold Shift + W until the step clears.',
+    focusTarget: 'space-viewport',
+  },
+  {
+    id: 'lockOnTrainingDrone',
+    title: 'Acquire Target Lock',
+    description: 'Aim at the training drone until crosshair lock engages.',
+    hint: 'Center the drone and hold aim until lock appears.',
+    focusTarget: 'space-viewport',
+  },
+  {
+    id: 'destroyTrainingDrone',
+    title: 'Controlled Firing Test',
+    description: 'Destroy the training drone with controlled shots.',
+    hint: 'Press Space to fire. Training shots are free.',
+    focusTarget: 'space-viewport',
+  },
   {
     id: 'approachStationForCharging',
     title: 'Approach Charging Range',
@@ -140,26 +203,28 @@ export const tutorialStepDescriptors: TutorialStepDescriptor[] = [
   },
   {
     id: 'engageCharging',
-    title: 'Engage Station Charging',
-    description: 'Click Start Charging while in station range.',
+    title: 'Dock And Engage Charging',
+    description: 'Dock to station, then click Start Charging while in range.',
     detail: [
       `Stay within ${CHARGING_RANGE_METERS} m.`,
+      `Dock inside ${STATION_DOCKING_RANGE_METERS} m.`,
       'Click Start Charging in Station controls.',
     ].join('\n'),
-    hint: `${stationPath} > Start Charging`,
+    hint: `Dock first, then ${stationPath} > Start Charging`,
     focusTarget: 'lab-start-charging',
     labTab: 'station',
   },
   {
     id: 'startCharging',
     title: 'Confirm Charge Flow',
-    description: 'Confirm Charge/s is positive while charging remains active.',
+    description: 'Confirm Charge/s is positive while docked and charging remains active.',
     detail: [
+      'Keep docking clamps engaged.',
       'Keep charging turned on.',
       'Check Station telemetry.',
       'Confirm Charge/s is above 0.',
     ].join('\n'),
-    hint: 'If Charge/s is 0, move closer to the station.',
+    hint: 'If Charge/s is 0, verify you are still docked and charging is active.',
     focusTarget: 'lab-start-charging',
     labTab: 'station',
   },
@@ -380,8 +445,32 @@ export const tutorialStepDescriptors: TutorialStepDescriptor[] = [
 
 export const mainQuestDefinitions: MainQuestDefinition[] = [
   {
-    id: 'main-learning-charge',
-    title: 'Learning To Charge',
+    id: CONTROL_SHIP_QUEST_ID,
+    title: 'Control The Ship',
+    summary: 'Complete baseline flight checks before entering live orbital operations.',
+    stepIds: [
+      'lookAroundWithMouse',
+      'strafeLeftAndRight',
+      'strafeUpAndDown',
+      'forwardReverseRun',
+      'boostThroughRing',
+      'lockOnTrainingDrone',
+      'destroyTrainingDrone',
+    ],
+    rewards: [
+      {
+        id: 'reward-flight-clearance',
+        label: 'Flight School Clearance',
+        description: 'Unlocks Earth Corridor transfer authorization.',
+        grants: {
+          unlocks: ['Earth Corridor Transit'],
+        },
+      },
+    ],
+  },
+  {
+    id: CHARGE_SHIP_QUEST_ID,
+    title: 'Charge The Ship',
     summary: 'Establish your first stable station charging loop.',
     stepIds: [
       'approachStationForCharging',
@@ -392,18 +481,19 @@ export const mainQuestDefinitions: MainQuestDefinition[] = [
     rewards: [
       {
         id: 'reward-station-protocol',
-        label: 'Starter Material Cache',
-        description: 'Adds 2 Iron Metal to Cargo.',
+        label: 'Docking Shortcut Package',
+        description: 'Unlocks E Dock + E Charge shortcuts; Adds 5 Energy Cells to Cargo.',
         grants: {
           items: {
-            ironMetal: 2,
+            energyCell: 5,
           },
+          unlocks: ['Station E Dock + Charge'],
         },
       },
     ],
   },
   {
-    id: 'main-feed-the-crew',
+    id: FEED_THE_CREW_QUEST_ID,
     title: 'Feed The Crew',
     summary: 'Build your first food ration chain and keep the crew supplied.',
     stepIds: [
@@ -430,7 +520,7 @@ export const mainQuestDefinitions: MainQuestDefinition[] = [
     ],
   },
   {
-    id: 'main-orbital-cleanup-protocol',
+    id: ORBITAL_CLEANUP_QUEST_ID,
     title: 'Orbital Cleanup Protocol',
     summary: 'Run the full loop from in-space salvage to station processing and first manufactured product.',
     stepIds: [
@@ -460,7 +550,7 @@ export const mainQuestDefinitions: MainQuestDefinition[] = [
 ]
 
 export const firstContractSideQuest: SideQuestDefinition = {
-  id: 'side-first-contract',
+  id: FIRST_CONTRACT_SIDE_QUEST_ID,
   title: 'First Contract Delivery',
   summary: 'Deliver your first market item and start earning credits.',
   rewards: [
@@ -500,6 +590,28 @@ export const firstContractSideQuest: SideQuestDefinition = {
   ],
 }
 
+export const galaxyBarAutomationSideQuest: SideQuestDefinition = {
+  id: GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID,
+  title: "Ration Thrashin'",
+  summary: 'Make 0/100 Galaxy Bars',
+  rewards: [
+    {
+      id: 'reward-galaxy-bar-automation',
+      label: 'Simplified Feeding',
+      description: 'Unlocks Galaxy Bar automation controls.',
+      grants: {
+        unlocks: ['Galaxy Bar Automation'],
+      },
+    },
+  ],
+  steps: [],
+}
+
+export const sideQuestDefinitions: SideQuestDefinition[] = [
+  firstContractSideQuest,
+  galaxyBarAutomationSideQuest,
+]
+
 interface BuildQuestProgressInput {
   tutorialChecklist: TutorialChecklistItem[]
   tutorialCurrentStepIndex: number
@@ -508,11 +620,25 @@ interface BuildQuestProgressInput {
   inventory: ResourceInventory
   credits: number
   energy: number
+  galaxyBarsCrafted: number
 }
 
 function hasAtLeast(value: number | undefined, required: number): boolean {
   const epsilon = 1e-6
   return (value ?? 0) + epsilon >= required
+}
+
+function normalizeCraftedGalaxyBars(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0
+  }
+
+  return Math.max(0, Math.floor(value))
+}
+
+function makeGalaxyBarCounterLabel(value: number): string {
+  const crafted = Math.min(100, normalizeCraftedGalaxyBars(value))
+  return `${crafted}/100`
 }
 
 function resolveQuestStepCompletion(
@@ -578,6 +704,7 @@ export function buildQuestProgressModel({
   inventory,
   credits,
   energy,
+  galaxyBarsCrafted,
 }: BuildQuestProgressInput): QuestProgressView[] {
   const stepsById = tutorialChecklist.reduce<Record<string, TutorialChecklistItem>>((map, step) => {
     map[step.id] = step
@@ -607,7 +734,13 @@ export function buildQuestProgressModel({
         hint: step.hint,
         focusTarget: step.focusTarget,
         labTab: step.labTab,
-        completed: resolveQuestStepCompletion(step.id, step.completed, inventory, credits, energy),
+        completed: resolveQuestStepCompletion(
+          step.id,
+          step.completed,
+          inventory,
+          credits,
+          energy,
+        ),
         current: false,
       })
     })
@@ -660,41 +793,67 @@ export function buildQuestProgressModel({
     }
   })
 
-  const sideQuestSteps: QuestStepProgress[] = firstContractSideQuest.steps.map((step) => {
-    if (step.id === 'side-craft-first-contract-item') {
-      const completed = resolveQuestStepCompletion(step.id, false, inventory, credits, energy)
+  const sideQuests = sideQuestDefinitions.map((sideQuestDefinition) => {
+    const sideQuestSteps: QuestStepProgress[] = sideQuestDefinition.steps.map((step) => {
+      const completed = resolveQuestStepCompletion(
+        step.id,
+        false,
+        inventory,
+        credits,
+        energy,
+      )
+
+      if (sideQuestDefinition.id === FIRST_CONTRACT_SIDE_QUEST_ID) {
+        if (step.id === 'side-craft-first-contract-item') {
+          return {
+            ...step,
+            completed,
+            current: !completed,
+          }
+        }
+
+        const current =
+          !completed &&
+          ((inventory.boxOfSand ?? 0) > 0 ||
+            (inventory.steelIngot ?? 0) > 0 ||
+            (inventory.energyCell ?? 0) > 0)
+
+        return {
+          ...step,
+          completed,
+          current,
+        }
+      }
+
       return {
         ...step,
         completed,
         current: !completed,
       }
-    }
+    })
 
-    const completed = resolveQuestStepCompletion(step.id, false, inventory, credits, energy)
-    const current =
-      !completed &&
-      ((inventory.boxOfSand ?? 0) > 0 ||
-        (inventory.steelIngot ?? 0) > 0 ||
-        (inventory.energyCell ?? 0) > 0)
+    const isGalaxyBarAutomationQuest =
+      sideQuestDefinition.id === GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID
+    const galaxyBarAutomationCompleted = hasAtLeast(galaxyBarsCrafted, 100)
+    const galaxyBarAutomationStarted = hasAtLeast(galaxyBarsCrafted, 1)
 
     return {
-      ...step,
-      completed,
-      current,
+      id: sideQuestDefinition.id,
+      title: sideQuestDefinition.title,
+      type: 'Side Quest' as const,
+      summary: isGalaxyBarAutomationQuest
+        ? `Make ${makeGalaxyBarCounterLabel(galaxyBarsCrafted)} Galaxy Bars`
+        : sideQuestDefinition.summary,
+      rewards: sideQuestDefinition.rewards,
+      completed: isGalaxyBarAutomationQuest
+        ? galaxyBarAutomationCompleted
+        : sideQuestSteps.every((step) => step.completed),
+      current: isGalaxyBarAutomationQuest
+        ? galaxyBarAutomationStarted && !galaxyBarAutomationCompleted
+        : sideQuestSteps.some((step) => step.current),
+      steps: sideQuestSteps,
     }
   })
 
-  const sideQuest: QuestProgressView = {
-    id: firstContractSideQuest.id,
-    title: firstContractSideQuest.title,
-    type: 'Side Quest',
-    summary: firstContractSideQuest.summary,
-    rewards: firstContractSideQuest.rewards,
-    completed: sideQuestSteps.every((step) => step.completed),
-    current: sideQuestSteps.some((step) => step.current),
-    steps: sideQuestSteps,
-  }
-
-  return [...mainQuests, sideQuest]
+  return [...mainQuests, ...sideQuests]
 }
-

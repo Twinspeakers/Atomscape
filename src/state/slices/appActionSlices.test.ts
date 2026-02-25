@@ -32,6 +32,7 @@ describe('appActionSlices', () => {
     }
     const resourceActionBindings = {
       useEnergyCell: vi.fn(),
+      upgradeBatteryCapacity: vi.fn(() => false),
       useConsumableSlot: vi.fn(),
       feedCrewGalaxyBar: vi.fn(),
       loadFridgeWater: vi.fn(),
@@ -52,6 +53,7 @@ describe('appActionSlices', () => {
     const basicStateActionBindings = {
       setFoodAutomationEnabled: vi.fn(),
       setWaterAutomationEnabled: vi.fn(),
+      setGalaxyBarAutomationEnabled: vi.fn(),
       setLabActiveTab: vi.fn(),
       setSelectedObject: vi.fn(),
       setPlayerUsername: vi.fn(),

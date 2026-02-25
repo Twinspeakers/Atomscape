@@ -8,6 +8,7 @@ export const selectTutorialCollapsed = (state: AppState) => state.tutorialCollap
 export const selectInventory = (state: AppState) => state.inventory
 export const selectEnergy = (state: AppState) => state.energy
 export const selectCredits = (state: AppState) => state.credits
+export const selectGalaxyBarsCrafted = (state: AppState) => state.galaxyBarsCrafted
 export const selectActiveSectorId = (state: AppState) => state.activeSectorId
 export const selectWorldDestroyedCount = (state: AppState) => state.worldDestroyedCount
 export const selectWorldRemainingCount = (state: AppState) => state.worldRemainingCount
@@ -18,6 +19,7 @@ export const selectResetTutorial = (state: AppState) => state.resetTutorial
 export const selectDismissTutorial = (state: AppState) => state.dismissTutorial
 export const selectPinnedQuestIds = (state: AppState) => state.pinnedQuestIds
 export const selectQuestRewardHistory = (state: AppState) => state.questRewardHistory
+export const selectClaimedQuestRewardIds = (state: AppState) => state.claimedQuestRewardIds
 export const selectToggleQuestPin = (state: AppState) => state.toggleQuestPin
 export const selectSetActiveMainQuest = (state: AppState) => state.setActiveMainQuest
 export const selectToggleTutorialCollapsed = (state: AppState) => state.toggleTutorialCollapsed

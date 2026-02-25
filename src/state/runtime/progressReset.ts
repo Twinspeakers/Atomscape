@@ -66,14 +66,14 @@ export async function resetAllProgressData(
   removeStorageItemSafely(dependencies.storage, keys.inventoryPanelHeightStorageKey)
 
   try {
-    dependencies.closeDatabase()
-    await dependencies.deleteDatabase()
+    await Promise.all([
+      dependencies.clearInventory(),
+      dependencies.clearWorldSession(),
+    ])
   } catch {
     try {
-      await Promise.all([
-        dependencies.clearInventory(),
-        dependencies.clearWorldSession(),
-      ])
+      dependencies.closeDatabase()
+      await dependencies.deleteDatabase()
     } catch {
       // Ignore indexedDB cleanup failures.
     }

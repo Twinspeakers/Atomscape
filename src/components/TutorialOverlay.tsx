@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { buildQuestProgressModel } from '@features/quests/questDefinitions'
+import {
+  buildQuestProgressModel,
+  GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID,
+} from '@features/quests/questDefinitions'
 import * as questUiSelectors from '@state/selectors/questUiSelectors'
 import { useAppStore } from '@state/store'
 import type { GameMenuSection, TutorialChecklistItem } from '@state/types'
@@ -75,6 +78,10 @@ function menuButtonFocusTarget(section: GameMenuSection): string {
     return 'game-menu-quests'
   }
 
+  if (section === 'ship') {
+    return 'game-menu-ship'
+  }
+
   if (section === 'crew') {
     return 'game-menu-crew'
   }
@@ -105,6 +112,21 @@ function resolveFocusTarget(
 const actionButtonClass = 'ui-action-button'
 const miniButtonClass = 'ui-action-button-sm'
 const statusTagClass = 'ui-status-tag'
+const QUICK_STEP_LAST_COLOR = '#78ef00'
+const QUICK_STEP_CURRENT_COLOR = '#d89a2b'
+const QUICK_STEP_NEXT_COLOR = '#f87171'
+
+function galaxyBarCounterColor(value: number): string {
+  if (value <= 0) {
+    return '#f87171'
+  }
+
+  if (value < 100) {
+    return '#d89a2b'
+  }
+
+  return '#78ef00'
+}
 
 export function TutorialOverlay({
   docked = false,
@@ -120,6 +142,7 @@ export function TutorialOverlay({
   const inventory = useAppStore(questUiSelectors.selectInventory)
   const energy = useAppStore(questUiSelectors.selectEnergy)
   const credits = useAppStore(questUiSelectors.selectCredits)
+  const galaxyBarsCrafted = useAppStore(questUiSelectors.selectGalaxyBarsCrafted)
   const pinnedQuestIds = useAppStore(questUiSelectors.selectPinnedQuestIds)
   const toggleTutorialCollapsed = useAppStore(questUiSelectors.selectToggleTutorialCollapsed)
   const dismissTutorial = useAppStore(questUiSelectors.selectDismissTutorial)
@@ -136,8 +159,18 @@ export function TutorialOverlay({
         inventory,
         credits,
         energy,
+        galaxyBarsCrafted,
       }),
-    [tutorialChecklist, tutorialCurrentStepIndex, tutorialComplete, activeMainQuestId, inventory, credits, energy],
+    [
+      tutorialChecklist,
+      tutorialCurrentStepIndex,
+      tutorialComplete,
+      activeMainQuestId,
+      inventory,
+      credits,
+      energy,
+      galaxyBarsCrafted,
+    ],
   )
   const mainQuestRows = useMemo(
     () => questRows.filter((quest) => quest.type === 'Main Quest'),
@@ -397,29 +430,6 @@ export function TutorialOverlay({
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="panel-heading">Quests</p>
-                <p className="ui-subtitle">
-                  Pinned Quests {pinnedQuestRows.length}
-                </p>
-              </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={toggleTutorialCollapsed}
-                  className={miniButtonClass}
-                >
-                  Collapse
-                </button>
-                <button
-                  onClick={dismissTutorial}
-                  className={miniButtonClass}
-                >
-                  Disable
-                </button>
-              </div>
-            </div>
-
             {pinnedQuestRows.length === 0 && (
               <div className="ui-surface-card">
                 <p className="ui-title">No quests pinned</p>
@@ -448,6 +458,23 @@ export function TutorialOverlay({
                 resolvedCurrentStepIndex >= 0
                   ? quest.steps[resolvedCurrentStepIndex + 1] ?? null
                   : null
+              const questHasSteps = quest.steps.length > 0
+              const galaxyBarCounterMatch =
+                !questHasSteps && quest.id === GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID
+                  ? quest.summary.match(/\b\d+\/100\b/)
+                  : null
+              const noStepQuestSummary =
+                galaxyBarCounterMatch && galaxyBarCounterMatch.index != null
+                  ? (
+                      <>
+                        {quest.summary.slice(0, galaxyBarCounterMatch.index)}
+                        <span style={{ color: galaxyBarCounterColor(galaxyBarsCrafted) }}>
+                          {galaxyBarCounterMatch[0]}
+                        </span>
+                        {quest.summary.slice(galaxyBarCounterMatch.index + galaxyBarCounterMatch[0].length)}
+                      </>
+                    )
+                  : quest.summary
 
               return (
                 <div key={quest.id} className="ui-surface-card">
@@ -465,20 +492,22 @@ export function TutorialOverlay({
                   </div>
                   {!currentTrackedStep && (
                     <div className="rounded bg-slate-900/35 px-2 py-1">
-                      <p className="ui-label">Quest Status</p>
-                      <p className="ui-body-copy">All steps complete.</p>
+                      <p className="ui-label">{questHasSteps ? 'Quest Status' : 'Objective'}</p>
+                      <p className="ui-body-copy">
+                        {questHasSteps ? 'All steps complete.' : noStepQuestSummary}
+                      </p>
                     </div>
                   )}
                   {currentTrackedStep && (
                     <div className="space-y-1">
                       {previousStep && (
                         <div className="ui-surface-card-strong px-2 py-1.5">
-                          <p className="ui-label">Last Step Done</p>
+                          <p className="ui-label" style={{ color: QUICK_STEP_LAST_COLOR }}>Last Step Done</p>
                           <p className="ui-body-copy">{previousStep.title}</p>
                         </div>
                       )}
                       <div className="ui-surface-card px-2 py-1.5">
-                        <p className="ui-label">Current Step</p>
+                        <p className="ui-label" style={{ color: QUICK_STEP_CURRENT_COLOR }}>Current Step</p>
                         <p className="ui-body-copy font-semibold text-slate-100">{currentTrackedStep.title}</p>
                         <StructuredText
                           text={currentTrackedStep.detail ?? currentTrackedStep.description}
@@ -493,7 +522,7 @@ export function TutorialOverlay({
                       </div>
                       {nextStep && (
                         <div className="ui-surface-card-strong px-2 py-1.5">
-                          <p className="ui-label">Next Step</p>
+                          <p className="ui-label" style={{ color: QUICK_STEP_NEXT_COLOR }}>Next Step</p>
                           <p className="ui-body-copy">{nextStep.title}</p>
                         </div>
                       )}

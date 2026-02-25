@@ -23,6 +23,7 @@ export interface SpaceViewportProps {
   docked?: boolean
   activeSectorId?: SectorId
   questFocusTarget?: string | null
+  currentTutorialStepId?: string | null
   worldSeed?: string
   depletedTargetIds?: string[]
   onTryFireLaser: () => boolean

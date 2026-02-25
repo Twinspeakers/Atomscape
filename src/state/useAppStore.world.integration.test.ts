@@ -1,16 +1,17 @@
 import { STATION_DOCKING_RANGE_METERS } from '@domain/spec/gameSpec'
-import { DEFAULT_START_SECTOR_ID, resolveSectorWorldTargetCount } from '@domain/spec/sectorSpec'
+import { EARTH_CORRIDOR_SECTOR_ID, resolveSectorWorldTargetCount } from '@domain/spec/sectorSpec'
 import { gameDb } from '@platform/db/gameDb'
 import { describe, expect, it, vi } from 'vitest'
 import { computeMinActiveWorldTargetCount, useAppStore } from '@state/store'
 
 describe('world session persistence invariants', () => {
-  const worldTargetCount = resolveSectorWorldTargetCount(DEFAULT_START_SECTOR_ID)
+  const worldTargetCount = resolveSectorWorldTargetCount(EARTH_CORRIDOR_SECTOR_ID)
   const minActiveTargetFloor = computeMinActiveWorldTargetCount(worldTargetCount)
 
   it('deduplicates depleted targets and hydrates world session snapshots safely', async () => {
     const initialState = useAppStore.getState()
     const originalSnapshot = {
+      activeSectorId: initialState.activeSectorId,
       worldStateLoaded: initialState.worldStateLoaded,
       worldSeed: initialState.worldSeed,
       worldDepletedTargetIds: [...initialState.worldDepletedTargetIds],
@@ -41,6 +42,7 @@ describe('world session persistence invariants', () => {
 
     try {
       useAppStore.setState({
+        activeSectorId: EARTH_CORRIDOR_SECTOR_ID,
         worldStateLoaded: false,
         worldSeed: 'reset-seed',
         worldDepletedTargetIds: [],
@@ -102,6 +104,7 @@ describe('world session persistence invariants', () => {
     } finally {
       worldSessionGetSpy.mockRestore()
       useAppStore.setState({
+        activeSectorId: originalSnapshot.activeSectorId,
         worldStateLoaded: originalSnapshot.worldStateLoaded,
         worldSeed: originalSnapshot.worldSeed,
         worldDepletedTargetIds: originalSnapshot.worldDepletedTargetIds,
@@ -119,6 +122,7 @@ describe('world session persistence invariants', () => {
   it('replenishes oldest depleted targets when active field drops below floor', () => {
     const initialState = useAppStore.getState()
     const originalSnapshot = {
+      activeSectorId: initialState.activeSectorId,
       worldStateLoaded: initialState.worldStateLoaded,
       worldSeed: initialState.worldSeed,
       worldDepletedTargetIds: [...initialState.worldDepletedTargetIds],
@@ -139,6 +143,7 @@ describe('world session persistence invariants', () => {
         (_, index) => `target-${index}`,
       )
       useAppStore.setState({
+        activeSectorId: EARTH_CORRIDOR_SECTOR_ID,
         worldStateLoaded: true,
         worldSeed: priorSeed,
         worldDepletedTargetIds: nearDepletedIds,
@@ -174,6 +179,7 @@ describe('world session persistence invariants', () => {
       ).toBe(true)
     } finally {
       useAppStore.setState({
+        activeSectorId: originalSnapshot.activeSectorId,
         worldStateLoaded: originalSnapshot.worldStateLoaded,
         worldSeed: originalSnapshot.worldSeed,
         worldDepletedTargetIds: originalSnapshot.worldDepletedTargetIds,
@@ -191,6 +197,7 @@ describe('world session persistence invariants', () => {
   it('replenishes low-population world sessions during hydration', async () => {
     const initialState = useAppStore.getState()
     const originalSnapshot = {
+      activeSectorId: initialState.activeSectorId,
       worldStateLoaded: initialState.worldStateLoaded,
       worldSeed: initialState.worldSeed,
       worldDepletedTargetIds: [...initialState.worldDepletedTargetIds],
@@ -227,6 +234,7 @@ describe('world session persistence invariants', () => {
 
     try {
       useAppStore.setState({
+        activeSectorId: EARTH_CORRIDOR_SECTOR_ID,
         worldStateLoaded: false,
         worldSeed: 'reset-seed',
         worldDepletedTargetIds: [],
@@ -257,6 +265,7 @@ describe('world session persistence invariants', () => {
     } finally {
       worldSessionGetSpy.mockRestore()
       useAppStore.setState({
+        activeSectorId: originalSnapshot.activeSectorId,
         worldStateLoaded: originalSnapshot.worldStateLoaded,
         worldSeed: originalSnapshot.worldSeed,
         worldDepletedTargetIds: originalSnapshot.worldDepletedTargetIds,

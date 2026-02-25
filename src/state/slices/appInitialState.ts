@@ -50,6 +50,8 @@ export function buildAppInitialState(options: BuildAppInitialStateOptions): AppS
     initialCrewAggregateMetrics,
     initialFridge,
     initialWaterAutomationEnabled,
+    initialGalaxyBarAutomationEnabled,
+    initialGalaxyBarsCrafted,
   } = bootstrap
   const initialInventory = createEmptyInventory()
 
@@ -66,6 +68,8 @@ export function buildAppInitialState(options: BuildAppInitialStateOptions): AppS
     crewAggregateMetrics: initialCrewAggregateMetrics,
     fridge: initialFridge,
     waterAutomationEnabled: initialWaterAutomationEnabled,
+    galaxyBarAutomationEnabled: initialGalaxyBarAutomationEnabled,
+    galaxyBarsCrafted: initialGalaxyBarsCrafted,
     radarContacts: [],
     activeSectorId: initialActiveSectorId,
     worldStateLoaded: false,

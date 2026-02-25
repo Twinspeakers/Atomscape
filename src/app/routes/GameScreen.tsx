@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
 } from 'react'
 import { CrosshairOverlay } from '@components/CrosshairOverlay'
 import { GameModal, type GameModalSection } from '@components/GameModal'
@@ -15,6 +16,7 @@ import { MainMenuModal } from '@components/MainMenuModal'
 import { QuestRewardModal } from '@components/QuestRewardModal'
 import { ShipStatusBar } from '@components/ShipStatusBar'
 import { TargetLabelsOverlay } from '@components/TargetLabelsOverlay'
+import { TrainingSceneQuestOverlay } from '@components/TrainingSceneQuestOverlay'
 import { DockSidebar, WorkspaceCustomizer } from '@app/routes/gameScreenLayoutPanels'
 import { workspacePresets } from '@app/routes/workspacePresets'
 import {
@@ -24,9 +26,18 @@ import {
   type TargetLabelAnchor,
 } from '@features/viewport/types'
 import { CHARGING_RANGE_METERS, STATION_DOCKING_RANGE_METERS } from '@domain/spec/gameSpec'
+import { CHARGE_SHIP_QUEST_ID, CONTROL_SHIP_QUEST_ID } from '@features/quests/questDefinitions'
+import { EARTH_CORRIDOR_SECTOR_ID, TRAINING_SECTOR_ID } from '@domain/spec/sectorSpec'
 import { useAppStore } from '@state/store'
 import * as gameScreenSelectors from '@state/selectors/gameScreenSelectors'
 import { RUNTIME_STATE_STORAGE_KEY } from '@state/runtime/snapshotPersistence'
+import {
+  createInitialSaveSlotSummaries,
+  listSaveSlotSummaries,
+  renameSaveSlot,
+  restoreSaveSlotToActiveRuntime,
+  saveCurrentStateToSlot,
+} from '@state/runtime/saveSlotPersistence'
 import type { DockSide, PanelId, WorkspacePreset } from '@state/types'
 
 type SceneView = 'space' | 'interior'
@@ -35,6 +46,16 @@ const sceneFadeDurationMs = 220
 const mainMenuAutostartWindowMs = 30_000
 const sceneLoadingFallback = <div className="h-full w-full bg-black" />
 const MAIN_MENU_AUTOSTART_STORAGE_KEY = 'space-main-menu-autostart-v1'
+const controlShipStepIds = [
+  'lookAroundWithMouse',
+  'strafeLeftAndRight',
+  'strafeUpAndDown',
+  'forwardReverseRun',
+  'boostThroughRing',
+  'lockOnTrainingDrone',
+  'destroyTrainingDrone',
+] as const
+
 function resolvePublicAssetPath(relativePath: string): string {
   const trimmedPath = relativePath.replace(/^\/+/, '')
   return `${import.meta.env.BASE_URL}${trimmedPath}`
@@ -158,11 +179,22 @@ function isTextInputTarget(target: EventTarget | null): boolean {
   return element.isContentEditable
 }
 
+function resolveErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  return fallback
+}
+
 export function GameScreen() {
   const [draggingPanelId, setDraggingPanelId] = useState<PanelId | null>(null)
   const [dragPreview, setDragPreview] = useState<{ side: DockSide; beforePanelId: PanelId | null; targetSlot: number } | null>(null)
   const [runtimeOverlayMode, setRuntimeOverlayMode] = useState<RuntimeOverlayMode>(() => resolveInitialRuntimeOverlayMode())
   const [sessionStarted, setSessionStarted] = useState<boolean>(() => hasPersistedRuntimeSnapshot())
+  const [saveSlots, setSaveSlots] = useState(() => createInitialSaveSlotSummaries())
+  const [saveSlotsLoading, setSaveSlotsLoading] = useState(false)
+  const [mainMenuStatusMessage, setMainMenuStatusMessage] = useState<string | null>(null)
   const [gameModalSection, setGameModalSection] = useState<GameModalSection | null>(null)
   const [selectedScene, setSelectedScene] = useState<SceneView>('space')
   const [displayedScene, setDisplayedScene] = useState<SceneView>('space')
@@ -178,11 +210,14 @@ export function GameScreen() {
   const [playerNameEditing, setPlayerNameEditing] = useState(false)
   const [clockNowMs, setClockNowMs] = useState(() => Date.now())
   const [portraitImageError, setPortraitImageError] = useState(false)
+  const [stationDistanceSynced, setStationDistanceSynced] = useState(false)
   const crosshairFeedbackTimeoutRef = useRef<number | null>(null)
   const stationFeedbackTimeoutRef = useRef<number | null>(null)
   const sceneSwapTimeoutRef = useRef<number | null>(null)
   const playerNameEditorRef = useRef<HTMLDivElement | null>(null)
   const cancelPlayerNameEditRef = useRef(false)
+  const trainingAutoTransitRequestedRef = useRef(false)
+  const stationDistanceSyncedRef = useRef(false)
 
   const hydrateInventory = useAppStore(gameScreenSelectors.selectHydrateInventory)
   const hydrateWorldSession = useAppStore(gameScreenSelectors.selectHydrateWorldSession)
@@ -204,6 +239,7 @@ export function GameScreen() {
   const tutorialChecklist = useAppStore(gameScreenSelectors.selectTutorialChecklist)
   const tutorialCurrentStepIndex = useAppStore(gameScreenSelectors.selectTutorialCurrentStepIndex)
   const tutorialComplete = useAppStore(gameScreenSelectors.selectTutorialComplete)
+  const claimedQuestRewardIds = useAppStore(gameScreenSelectors.selectClaimedQuestRewardIds)
   const questRewardNotifications = useAppStore(gameScreenSelectors.selectQuestRewardNotifications)
   const dismissQuestRewardNotification = useAppStore(gameScreenSelectors.selectDismissQuestRewardNotification)
   const charging = useAppStore(gameScreenSelectors.selectCharging)
@@ -238,6 +274,40 @@ export function GameScreen() {
   const tickSimulation = useAppStore(gameScreenSelectors.selectTickSimulation)
   const resetAllProgress = useAppStore(gameScreenSelectors.selectResetAllProgress)
   const activeQuestRewardNotification = questRewardNotifications[0] ?? null
+  const stationShortcutUnlocked = claimedQuestRewardIds.includes(CHARGE_SHIP_QUEST_ID)
+  const controlQuestComplete = claimedQuestRewardIds.includes(CONTROL_SHIP_QUEST_ID)
+  const trainingQuestStep = useMemo(() => {
+    if (
+      activeSectorId !== TRAINING_SECTOR_ID
+      || tutorialComplete
+      || runtimeOverlayMode !== 'running'
+      || gameModalSection !== null
+      || activeQuestRewardNotification !== null
+    ) {
+      return null
+    }
+
+    const currentStep = tutorialChecklist[tutorialCurrentStepIndex] ?? null
+    if (!currentStep) {
+      return null
+    }
+
+    return controlShipStepIds.includes(currentStep.id as (typeof controlShipStepIds)[number])
+      ? currentStep
+      : null
+  }, [
+    activeQuestRewardNotification,
+    activeSectorId,
+    gameModalSection,
+    runtimeOverlayMode,
+    tutorialChecklist,
+    tutorialComplete,
+    tutorialCurrentStepIndex,
+  ])
+  const completedControlShipSteps = useMemo(
+    () => controlShipStepIds.filter((stepId) => tutorialChecklist.find((step) => step.id === stepId)?.completed).length,
+    [tutorialChecklist],
+  )
 
   const openGameMenuSection = useCallback((section: GameModalSection | null) => {
     if (section === null) {
@@ -284,6 +354,54 @@ export function GameScreen() {
     await resetAllProgress()
   }, [resetAllProgress])
 
+  const refreshSaveSlots = useCallback(async () => {
+    setSaveSlotsLoading(true)
+    try {
+      const summaries = await listSaveSlotSummaries()
+      setSaveSlots(summaries)
+    } catch {
+      setMainMenuStatusMessage('Unable to read save slots right now.')
+    } finally {
+      setSaveSlotsLoading(false)
+    }
+  }, [])
+
+  const handleSaveToSlot = useCallback(async (slotId: number) => {
+    try {
+      await saveCurrentStateToSlot(slotId, useAppStore.getState())
+      setMainMenuStatusMessage(`Saved current run to slot ${slotId.toString().padStart(2, '0')}.`)
+      await refreshSaveSlots()
+    } catch (error) {
+      setMainMenuStatusMessage(
+        resolveErrorMessage(error, 'Saving failed. Please try again.'),
+      )
+    }
+  }, [refreshSaveSlots])
+
+  const handleRenameSlot = useCallback(async (slotId: number, nextName: string) => {
+    try {
+      await renameSaveSlot(slotId, nextName)
+      setMainMenuStatusMessage(`Renamed slot ${slotId.toString().padStart(2, '0')}.`)
+      await refreshSaveSlots()
+    } catch (error) {
+      setMainMenuStatusMessage(
+        resolveErrorMessage(error, 'Could not rename this save slot.'),
+      )
+    }
+  }, [refreshSaveSlots])
+
+  const handleLoadFromSlot = useCallback(async (slotId: number) => {
+    try {
+      await restoreSaveSlotToActiveRuntime(slotId)
+      requestMainMenuAutostart()
+      window.location.replace(window.location.pathname + window.location.search + window.location.hash)
+    } catch (error) {
+      setMainMenuStatusMessage(
+        resolveErrorMessage(error, 'Loading failed. Please choose another slot.'),
+      )
+    }
+  }, [])
+
   useEffect(() => {
     if (runtimeOverlayMode === 'running') {
       setSessionStarted(true)
@@ -291,9 +409,37 @@ export function GameScreen() {
   }, [runtimeOverlayMode])
 
   useEffect(() => {
+    if (runtimeOverlayMode !== 'mainMenu' || !sessionStarted) {
+      return
+    }
+
+    setMainMenuStatusMessage(null)
+    void refreshSaveSlots()
+  }, [refreshSaveSlots, runtimeOverlayMode, sessionStarted])
+
+  useEffect(() => {
     void hydrateInventory()
     void hydrateWorldSession()
   }, [hydrateInventory, hydrateWorldSession])
+
+  useEffect(() => {
+    if (activeSectorId !== TRAINING_SECTOR_ID) {
+      trainingAutoTransitRequestedRef.current = false
+      return
+    }
+
+    if (!controlQuestComplete || trainingAutoTransitRequestedRef.current) {
+      return
+    }
+
+    trainingAutoTransitRequestedRef.current = true
+    void jumpToSector(EARTH_CORRIDOR_SECTOR_ID)
+  }, [activeSectorId, controlQuestComplete, jumpToSector])
+
+  useEffect(() => {
+    stationDistanceSyncedRef.current = false
+    setStationDistanceSynced(false)
+  }, [activeSectorId])
 
   useEffect(() => {
     return () => {
@@ -351,7 +497,9 @@ export function GameScreen() {
           return
         }
 
-        openPausedOverlay()
+        if (sessionStarted) {
+          continueSession()
+        }
         return
       }
 
@@ -386,6 +534,13 @@ export function GameScreen() {
         event.preventDefault()
         event.stopPropagation()
         openGameMenuSection('quests')
+        return
+      }
+
+      if (key === 'h') {
+        event.preventDefault()
+        event.stopPropagation()
+        openGameMenuSection('ship')
         return
       }
 
@@ -444,11 +599,13 @@ export function GameScreen() {
       window.removeEventListener('keydown', handleModalHotkeys, true)
     }
   }, [
+    continueSession,
     gameModalSection,
     openGameMenuSection,
     openMainMenu,
     openPausedOverlay,
     runtimeOverlayMode,
+    sessionStarted,
     triggerConsumableSlot,
   ])
 
@@ -464,14 +621,18 @@ export function GameScreen() {
 
       if (
         runtimeOverlayMode !== 'running'
-        || gameModalSection !== null
         || activeQuestRewardNotification !== null
         ||
         selectedScene !== 'space'
         || displayedScene !== 'space'
         || sceneFading
+        || !stationDistanceSynced
         || !worldStateLoaded
       ) {
+        return
+      }
+
+      if (!stationShortcutUnlocked) {
         return
       }
 
@@ -498,11 +659,12 @@ export function GameScreen() {
     charging,
     displayedScene,
     docked,
-    gameModalSection,
     runtimeOverlayMode,
     sceneFading,
     selectedScene,
     startCharging,
+    stationDistanceSynced,
+    stationShortcutUnlocked,
     stationDistance,
     toggleDocked,
     worldStateLoaded,
@@ -523,6 +685,17 @@ export function GameScreen() {
   const chargeValueLabel = energy.toLocaleString(undefined, { maximumFractionDigits: 4 })
   const chargeMaxLabel = maxEnergy.toLocaleString(undefined, { maximumFractionDigits: 4 })
   const stationPrompt = useMemo(() => {
+    if (!stationDistanceSynced) {
+      return null
+    }
+
+    if (!stationShortcutUnlocked && stationDistance <= STATION_DOCKING_RANGE_METERS) {
+      return {
+        title: 'Dock/Charge Shortcut Locked',
+        action: 'Complete Charge The Ship to unlock E shortcuts.',
+      }
+    }
+
     const canDock = !docked && stationDistance <= STATION_DOCKING_RANGE_METERS
     if (canDock) {
       return {
@@ -540,17 +713,17 @@ export function GameScreen() {
     }
 
     return null
-  }, [charging, docked, stationDistance])
+  }, [charging, docked, stationDistance, stationDistanceSynced, stationShortcutUnlocked])
   const showStationPrompt =
     stationPrompt
     && displayedScene === 'space'
     && selectedScene === 'space'
+    && stationDistanceSynced
     && worldStateLoaded
     && !sceneFading
     && runtimeOverlayMode === 'running'
-    && gameModalSection === null
     && activeQuestRewardNotification === null
-  const overlaySuppressed = gameModalSection !== null || activeQuestRewardNotification !== null || runtimeOverlayMode !== 'running'
+  const overlaySuppressed = activeQuestRewardNotification !== null || runtimeOverlayMode !== 'running'
   const commsPortrait = useMemo(() => {
     if (activeCommsSpeaker) {
       return activeCommsSpeaker
@@ -742,10 +915,52 @@ export function GameScreen() {
 
     return tutorialChecklist[tutorialCurrentStepIndex]?.focusTarget ?? null
   }, [tutorialChecklist, tutorialCurrentStepIndex, tutorialComplete])
+  const currentTutorialStepId = tutorialComplete
+    ? null
+    : tutorialChecklist[tutorialCurrentStepIndex]?.id ?? null
+  const handleStationDistance = useCallback((distance: number) => {
+    if (!stationDistanceSyncedRef.current) {
+      stationDistanceSyncedRef.current = true
+      setStationDistanceSynced(true)
+    }
+
+    setStationDistanceFromScene(distance)
+  }, [setStationDistanceFromScene])
+  const handleViewportMouseDownCapture = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) {
+      return
+    }
+
+    if (
+      runtimeOverlayMode !== 'paused'
+      || gameModalSection !== null
+      || activeQuestRewardNotification !== null
+      || sceneFading
+      || !worldStateLoaded
+    ) {
+      return
+    }
+
+    if (!(event.target instanceof HTMLCanvasElement)) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    continueSession()
+  }, [
+    activeQuestRewardNotification,
+    continueSession,
+    gameModalSection,
+    runtimeOverlayMode,
+    sceneFading,
+    worldStateLoaded,
+  ])
   return (
     <main className="relative h-full w-full overflow-hidden">
       <div
         data-tutorial-focus="space-viewport"
+        onMouseDownCapture={handleViewportMouseDownCapture}
         className={`absolute inset-0 transition-opacity duration-[220ms] ${sceneFading ? 'opacity-0' : 'opacity-100'}`}
       >
         {displayedScene === 'space' ? (
@@ -763,6 +978,7 @@ export function GameScreen() {
                 docked={docked}
                 activeSectorId={activeSectorId}
                 questFocusTarget={currentQuestFocusTarget}
+                currentTutorialStepId={currentTutorialStepId}
                 worldSeed={worldSeed}
                 depletedTargetIds={worldDepletedTargetIds}
                 onTryFireLaser={() => tryFireMiningLaser()}
@@ -770,7 +986,7 @@ export function GameScreen() {
                   void recordExtractionHit(target)
                 }}
                 onTargetDepleted={recordWorldTargetDepleted}
-                onStationDistance={setStationDistanceFromScene}
+                onStationDistance={handleStationDistance}
                 onActiveZoneChange={setActiveCleanupZone}
                 onStationFeedback={handleStationFeedback}
                 onShipCollisionEvent={handleShipCollisionEvent}
@@ -827,6 +1043,13 @@ export function GameScreen() {
               <p className="text-lg font-semibold tracking-[0.04em] text-[#78ef00]">{stationPrompt.action}</p>
             </div>
           </div>
+        )}
+        {trainingQuestStep && (
+          <TrainingSceneQuestOverlay
+            step={trainingQuestStep}
+            completedCount={completedControlShipSteps}
+            totalCount={controlShipStepIds.length}
+          />
         )}
         {stationFeedbackMessage && (
           <div
@@ -995,21 +1218,20 @@ export function GameScreen() {
           />
         )}
 
-        {runtimeOverlayMode === 'paused' && (
-          <div className="pointer-events-none absolute left-1/2 top-[5.1rem] z-[70] -translate-x-1/2">
-            <div className="panel-shell rounded px-3 py-1.5 text-center">
-              <p className="ui-note">Scene paused. Press Esc again for Main Menu.</p>
-            </div>
-          </div>
-        )}
-
         {runtimeOverlayMode === 'mainMenu' && (
           <MainMenuModal
             canContinue={sessionStarted}
+            canManageSaves={sessionStarted}
+            saveSlots={saveSlots}
+            saveSlotsLoading={saveSlotsLoading}
+            statusMessage={mainMenuStatusMessage}
             onContinue={continueSession}
             onStartNewGame={() => {
               void handleStartNewGame()
             }}
+            onSaveToSlot={handleSaveToSlot}
+            onLoadFromSlot={handleLoadFromSlot}
+            onRenameSlot={handleRenameSlot}
           />
         )}
 

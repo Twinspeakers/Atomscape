@@ -8,6 +8,7 @@ import {
   applyFeedCrewGalaxyBarTransition,
   applyLoadFridgeGalaxyBarsTransition,
   applyLoadFridgeWaterTransition,
+  applyUpgradeBatteryCapacityTransition,
   applyUseEnergyCellTransition,
 } from './crewConsumableTransitions'
 
@@ -82,6 +83,57 @@ describe('crewConsumableTransitions', () => {
 
     expect(noCells.kind).toBe('noop')
     expect(fullEnergy.kind).toBe('noop')
+  })
+
+  it('upgrades battery capacity when required resources are available', () => {
+    const result = applyUpgradeBatteryCapacityTransition(
+      {
+        inventory: {
+          energyCell: 10,
+          steelIngot: 20,
+          carbon: 90,
+        },
+        energy: 120,
+        maxEnergy: 2000,
+        simulationLog: [],
+      },
+      appendLog,
+    )
+
+    expect(result.kind).toBe('success')
+    if (result.kind !== 'success') {
+      return
+    }
+
+    expect(result.maxEnergy).toBe(2500)
+    expect(result.inventory.energyCell).toBe(6)
+    expect(result.inventory.steelIngot).toBe(12)
+    expect(result.inventory.carbon).toBe(50)
+    expect(result.simulationLog[0]?.message).toContain('Battery upgraded')
+  })
+
+  it('blocks battery upgrades and logs missing materials', () => {
+    const result = applyUpgradeBatteryCapacityTransition(
+      {
+        inventory: {
+          energyCell: 0,
+          steelIngot: 1,
+          carbon: 5,
+        },
+        energy: 120,
+        maxEnergy: 2000,
+        simulationLog: [],
+      },
+      appendLog,
+    )
+
+    expect(result.kind).toBe('log-only')
+    if (result.kind !== 'log-only') {
+      return
+    }
+
+    expect(result.simulationLog[0]?.message).toContain('Battery upgrade blocked')
+    expect(result.simulationLog[0]?.message).toContain('Energy Cell')
   })
 
   it('feeds crew from fridge first when bars are available', () => {

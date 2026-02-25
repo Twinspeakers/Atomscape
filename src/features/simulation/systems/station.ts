@@ -27,6 +27,12 @@ export function applyStationCharging(
     return
   }
 
+  if (!state.docked) {
+    state.charging = false
+    pushLog('Charging stopped: docking clamps disengaged.')
+    return
+  }
+
   if (state.stationDistance > CHARGING_RANGE_METERS) {
     state.charging = false
     pushLog(`Charging stopped: you drifted outside station range (${CHARGING_RANGE_METERS} m).`)

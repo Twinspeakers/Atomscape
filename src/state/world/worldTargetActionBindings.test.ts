@@ -1,5 +1,5 @@
 import {
-  DEFAULT_START_SECTOR_ID,
+  EARTH_CORRIDOR_SECTOR_ID,
   resolveSectorWorldTargetCount,
 } from '@domain/spec/sectorSpec'
 import type { ExtractionTargetPayload, SimulationLogEntry } from '@state/types'
@@ -37,10 +37,10 @@ function createTarget(overrides: Partial<ExtractionTargetPayload> = {}): Extract
 }
 
 function createState(overrides: Partial<WorldTargetActionState> = {}): WorldTargetActionState {
-  const worldTargetCount = resolveSectorWorldTargetCount(DEFAULT_START_SECTOR_ID)
+  const worldTargetCount = resolveSectorWorldTargetCount(EARTH_CORRIDOR_SECTOR_ID)
 
   return {
-    activeSectorId: DEFAULT_START_SECTOR_ID,
+    activeSectorId: EARTH_CORRIDOR_SECTOR_ID,
     worldDepletedTargetIds: [],
     worldDestroyedCount: 0,
     worldRemainingCount: worldTargetCount,
@@ -76,7 +76,7 @@ describe('worldTargetActionBindings', () => {
   })
 
   it('keeps floor by replenishing oldest depleted targets', () => {
-    const worldTargetCount = resolveSectorWorldTargetCount(DEFAULT_START_SECTOR_ID)
+    const worldTargetCount = resolveSectorWorldTargetCount(EARTH_CORRIDOR_SECTOR_ID)
     const floor = computeMinActiveWorldTargetCount(worldTargetCount)
     const maxDepletedCount = Math.max(0, worldTargetCount - floor)
     const nearDepletedIds = Array.from(

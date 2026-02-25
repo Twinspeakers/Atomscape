@@ -1,4 +1,5 @@
 import { computeAtomTotals } from '@domain/resources/resourceCatalog'
+import { PROCESS_CATALOG } from '@domain/spec/processCatalog'
 import type { ProcessRunOptions } from '@domain/spec/processCatalog'
 import type { MarketState } from '@features/simulation/engine'
 import { applyProcessRunTransition } from '@state/simulation/processTransitions'
@@ -42,6 +43,8 @@ export interface SimulationActionState {
   crewAggregateMetrics: CrewAggregateMetrics
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  galaxyBarsCrafted: number
   cycleTimeSeconds: number
   starvationFailureLock: boolean
   crewFeedsDelivered: number
@@ -114,12 +117,17 @@ export function buildSimulationActionBindings(
 
         persistInventory = transition.persistInventory
 
+        const nextGalaxyBarsCrafted = processOptions === PROCESS_CATALOG.galaxyBarAssembler
+          ? state.galaxyBarsCrafted + 1
+          : state.galaxyBarsCrafted
+
         return {
           inventory: transition.inventory,
           energy: transition.energy,
           atomCounter: computeAtomTotals(transition.inventory),
           simulationSummary: transition.simulationSummary,
           simulationLog: transition.simulationLog,
+          galaxyBarsCrafted: nextGalaxyBarsCrafted,
         }
       })
 
@@ -150,6 +158,8 @@ export function buildSimulationActionBindings(
           crewMembers: state.crewMembers,
           fridge: state.fridge,
           waterAutomationEnabled: state.waterAutomationEnabled,
+          galaxyBarAutomationEnabled: state.galaxyBarAutomationEnabled,
+          galaxyBarsCrafted: state.galaxyBarsCrafted,
           cycleTimeSeconds: state.cycleTimeSeconds,
           simulationLog: state.simulationLog,
           starvationFailureLock: state.starvationFailureLock,
@@ -171,6 +181,8 @@ export function buildSimulationActionBindings(
           crewAggregateMetrics: next.crewAggregateMetrics,
           fridge: next.fridge,
           waterAutomationEnabled: next.waterAutomationEnabled,
+          galaxyBarAutomationEnabled: next.galaxyBarAutomationEnabled,
+          galaxyBarsCrafted: next.galaxyBarsCrafted,
           starvationFailureLock: next.starvationFailureLock,
           stationDistance: next.stationDistance,
           simulationSummary: next.simulationSummary,

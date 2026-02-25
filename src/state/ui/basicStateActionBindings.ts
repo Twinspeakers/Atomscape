@@ -1,3 +1,4 @@
+import { GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID } from '@features/quests/questDefinitions'
 import type {
   CommsSpeaker,
   CrewStatus,
@@ -18,6 +19,8 @@ type AppendLog = (options: AppendLogOptions) => SimulationLogEntry[]
 export interface BasicStateActionState {
   crewStatus: CrewStatus
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  claimedQuestRewardIds: string[]
   simulationLog: SimulationLogEntry[]
   labActiveTab: LabTab
   selectedObject: SelectedObject | null
@@ -30,6 +33,7 @@ export interface BasicStateActionState {
 export interface BasicStateActionBindings {
   setFoodAutomationEnabled: (enabled: boolean) => void
   setWaterAutomationEnabled: (enabled: boolean) => void
+  setGalaxyBarAutomationEnabled: (enabled: boolean) => void
   setLabActiveTab: (tab: LabTab) => void
   setSelectedObject: (selection: SelectedObject | null) => void
   setPlayerUsername: (name: string) => void
@@ -61,7 +65,7 @@ export function buildBasicStateActionBindings(
         simulationLog: options.appendLog({
           logs: state.simulationLog,
           message: enabled
-            ? 'Crew food automation enabled: system will auto-craft/feed Galaxy Bars.'
+            ? 'Crew food automation enabled: system will auto-feed Galaxy Bars when available.'
             : 'Crew food automation disabled.',
         }),
       }))
@@ -76,6 +80,29 @@ export function buildBasicStateActionBindings(
             : 'Crew hydration automation disabled.',
         }),
       }))
+    },
+    setGalaxyBarAutomationEnabled: (enabled) => {
+      options.setWithState((state) => {
+        const unlocked = state.claimedQuestRewardIds.includes(GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID)
+        if (enabled && !unlocked) {
+          return {
+            simulationLog: options.appendLog({
+              logs: state.simulationLog,
+              message: 'Galaxy Bar automation remains locked: complete Make 100 Galaxy Bars side quest.',
+            }),
+          }
+        }
+
+        return {
+          galaxyBarAutomationEnabled: enabled,
+          simulationLog: options.appendLog({
+            logs: state.simulationLog,
+            message: enabled
+              ? 'Galaxy Bar automation enabled: assembler now runs automatically each tick when inputs are available.'
+              : 'Galaxy Bar automation disabled.',
+          }),
+        }
+      })
     },
     setLabActiveTab: (tab) => {
       options.setPatch({ labActiveTab: tab })

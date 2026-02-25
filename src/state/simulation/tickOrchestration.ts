@@ -38,6 +38,8 @@ export interface OfflineCatchupTickInput {
   crewAggregateMetrics: CrewAggregateMetrics
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled?: boolean
+  galaxyBarsCrafted?: number
   stationDistance: number
   simulationSummary: SimulationSummary
   simulationLog: SimulationLogEntry[]
@@ -56,6 +58,8 @@ export interface OfflineCatchupTickResult {
   crewAggregateMetrics: CrewAggregateMetrics
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  galaxyBarsCrafted: number
   stationDistance: number
   simulationSummary: SimulationSummary
   simulationLog: SimulationLogEntry[]
@@ -82,6 +86,8 @@ export interface LiveSimulationTickInput {
   crewStatus: CrewStatus
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled?: boolean
+  galaxyBarsCrafted?: number
   simulationLog: SimulationLogEntry[]
   cycleTimeSeconds: number
   starvationFailureLock: boolean
@@ -99,6 +105,8 @@ export interface LiveSimulationTickResult {
   crewAggregateMetrics: CrewAggregateMetrics
   fridge: FridgeState
   waterAutomationEnabled: boolean
+  galaxyBarAutomationEnabled: boolean
+  galaxyBarsCrafted: number
   starvationFailureLock: boolean
   stationDistance: number
   simulationSummary: SimulationSummary
@@ -188,6 +196,8 @@ function applyTickToState(
     crewAggregateMetrics: CrewAggregateMetrics
     fridge: FridgeState
     waterAutomationEnabled: boolean
+    galaxyBarAutomationEnabled: boolean
+    galaxyBarsCrafted: number
     stationDistance: number
     simulationSummary: SimulationSummary
     simulationLog: SimulationLogEntry[]
@@ -210,6 +220,11 @@ function applyTickToState(
   state.containmentOn = tick.containmentOn
   state.fridge = tick.fridge ?? state.fridge
   state.waterAutomationEnabled = tick.waterAutomationEnabled ?? state.waterAutomationEnabled
+  state.galaxyBarAutomationEnabled =
+    tick.galaxyBarAutomationEnabled ?? state.galaxyBarAutomationEnabled
+  state.galaxyBarsCrafted = tick.autoCraftedGalaxyBars != null
+    ? state.galaxyBarsCrafted + tick.autoCraftedGalaxyBars
+    : state.galaxyBarsCrafted
   state.stationDistance = tick.stationDistance
   state.simulationSummary = tick.simulationSummary
   state.simulationLog = tick.simulationLog
@@ -232,6 +247,7 @@ export function runLiveSimulationTick(input: LiveSimulationTickInput): LiveSimul
     crewDebuff: input.crewStatus.debuff,
     crewStarving: input.crewStatus.starving,
     foodAutomationEnabled: input.crewStatus.foodAutomationEnabled,
+    galaxyBarAutomationEnabled: input.galaxyBarAutomationEnabled ?? false,
     crewMembers: input.crewMembers,
     fridge: input.fridge,
     waterAutomationEnabled: input.waterAutomationEnabled,
@@ -262,6 +278,9 @@ export function runLiveSimulationTick(input: LiveSimulationTickInput): LiveSimul
     crewAggregateMetrics: crewTransition.crewAggregateMetrics,
     fridge: tick.fridge ?? input.fridge,
     waterAutomationEnabled: tick.waterAutomationEnabled ?? input.waterAutomationEnabled,
+    galaxyBarAutomationEnabled: input.galaxyBarAutomationEnabled ?? false,
+    galaxyBarsCrafted:
+      (input.galaxyBarsCrafted ?? 0) + (tick.autoCraftedGalaxyBars ?? 0),
     starvationFailureLock: failureTransition.starvationFailureLock,
     stationDistance: tick.stationDistance,
     simulationSummary: tick.simulationSummary,
@@ -290,6 +309,8 @@ export function runOfflineCatchupTicks(input: OfflineCatchupTickInput): OfflineC
     crewAggregateMetrics: input.crewAggregateMetrics,
     fridge: input.fridge,
     waterAutomationEnabled: input.waterAutomationEnabled,
+    galaxyBarAutomationEnabled: input.galaxyBarAutomationEnabled ?? false,
+    galaxyBarsCrafted: input.galaxyBarsCrafted ?? 0,
     stationDistance: input.stationDistance,
     simulationSummary: input.simulationSummary,
     simulationLog: input.simulationLog,
@@ -319,6 +340,7 @@ export function runOfflineCatchupTicks(input: OfflineCatchupTickInput): OfflineC
       crewDebuff: nextState.crewStatus.debuff,
       crewStarving: nextState.crewStatus.starving,
       foodAutomationEnabled: nextState.crewStatus.foodAutomationEnabled,
+      galaxyBarAutomationEnabled: nextState.galaxyBarAutomationEnabled,
       crewMembers: nextState.crewMembers,
       fridge: nextState.fridge,
       waterAutomationEnabled: nextState.waterAutomationEnabled,
@@ -358,6 +380,8 @@ export function runOfflineCatchupTicks(input: OfflineCatchupTickInput): OfflineC
     crewAggregateMetrics: nextState.crewAggregateMetrics,
     fridge: nextState.fridge,
     waterAutomationEnabled: nextState.waterAutomationEnabled,
+    galaxyBarAutomationEnabled: nextState.galaxyBarAutomationEnabled,
+    galaxyBarsCrafted: nextState.galaxyBarsCrafted,
     stationDistance: nextState.stationDistance,
     simulationSummary: nextState.simulationSummary,
     simulationLog: nextState.simulationLog,

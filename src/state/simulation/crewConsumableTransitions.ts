@@ -4,13 +4,17 @@ import {
   ENERGY_CELL_DISCHARGE_ENERGY,
   FRIDGE_DEFAULT_WATER_CAPACITY_LITERS,
 } from '@domain/spec/gameSpec'
+import {
+  batteryUpgradeCostEntries,
+  deriveBatteryUpgradePlan,
+} from '@domain/spec/batteryUpgrade'
 import { buildSimulationSummary } from '@features/simulation/engine'
 import {
   deriveCrewAggregateMetrics,
   deriveCrewStatusFromMembers,
 } from '@state/runtime/snapshotSanitizers'
 import { clamp, roundQty } from '@state/utils/numberUtils'
-import { formatQty } from '@domain/resources/resourceCatalog'
+import { formatQty, resourceById } from '@domain/resources/resourceCatalog'
 import type {
   CrewAggregateMetrics,
   CrewMemberState,
@@ -99,6 +103,100 @@ export function applyUseEnergyCellTransition(
     }),
     restoredEnergy,
     persistInventory: true,
+  }
+}
+
+export interface UpgradeBatteryCapacityTransitionState {
+  inventory: ResourceInventory
+  energy: number
+  maxEnergy: number
+  simulationLog: SimulationLogEntry[]
+}
+
+export type UpgradeBatteryCapacityTransitionResult =
+  | {
+      kind: 'log-only'
+      simulationLog: SimulationLogEntry[]
+      persistInventory: false
+    }
+  | {
+      kind: 'success'
+      inventory: ResourceInventory
+      energy: number
+      maxEnergy: number
+      simulationLog: SimulationLogEntry[]
+      persistInventory: true
+      gainedCapacity: number
+    }
+
+function batteryUpgradeCostText(maxEnergy: number): string {
+  const plan = deriveBatteryUpgradePlan(maxEnergy)
+  return batteryUpgradeCostEntries(plan.cost)
+    .map(([resourceId, amount]) => `${formatQty(amount)} ${resourceById[resourceId].label}`)
+    .join(', ')
+}
+
+export function applyUpgradeBatteryCapacityTransition(
+  state: UpgradeBatteryCapacityTransitionState,
+  appendLog: AppendLog,
+): UpgradeBatteryCapacityTransitionResult {
+  const plan = deriveBatteryUpgradePlan(state.maxEnergy)
+  if (plan.atCap || plan.gain <= 0) {
+    return {
+      kind: 'log-only',
+      simulationLog: appendLog({
+        logs: state.simulationLog,
+        message: `Battery upgrade blocked: capacity is already maxed at ${formatQty(plan.currentMaxEnergy)} energy.`,
+      }),
+      persistInventory: false,
+    }
+  }
+
+  const costEntries = batteryUpgradeCostEntries(plan.cost)
+  const missing = costEntries.filter(
+    ([resourceId, required]) => (state.inventory[resourceId] ?? 0) + 0.0001 < required,
+  )
+
+  if (missing.length > 0) {
+    const missingText = missing
+      .map(([resourceId, required]) => {
+        const available = state.inventory[resourceId] ?? 0
+        return `${resourceById[resourceId].label} ${formatQty(available)}/${formatQty(required)}`
+      })
+      .join(', ')
+
+    return {
+      kind: 'log-only',
+      simulationLog: appendLog({
+        logs: state.simulationLog,
+        message: `Battery upgrade blocked: missing ${missingText}.`,
+      }),
+      persistInventory: false,
+    }
+  }
+
+  const nextInventory = {
+    ...state.inventory,
+  }
+  costEntries.forEach(([resourceId, required]) => {
+    const available = state.inventory[resourceId] ?? 0
+    nextInventory[resourceId] = roundQty(Math.max(0, available - required))
+  })
+
+  const nextMaxEnergy = roundQty(plan.nextMaxEnergy)
+  const gainedCapacity = roundQty(Math.max(0, nextMaxEnergy - state.maxEnergy))
+
+  return {
+    kind: 'success',
+    inventory: nextInventory,
+    energy: roundQty(clamp(state.energy, 0, nextMaxEnergy)),
+    maxEnergy: nextMaxEnergy,
+    simulationLog: appendLog({
+      logs: state.simulationLog,
+      message: `Battery upgraded: +${formatQty(gainedCapacity)} max energy (${formatQty(state.maxEnergy)} -> ${formatQty(nextMaxEnergy)}). Materials consumed: ${batteryUpgradeCostText(state.maxEnergy)}.`,
+    }),
+    persistInventory: true,
+    gainedCapacity,
   }
 }
 

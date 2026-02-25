@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { resetAllProgressData } from './progressReset'
 
 describe('progressReset', () => {
-  it('cleans storage, deletes database, and reloads', async () => {
+  it('cleans storage, clears active runtime tables, and reloads', async () => {
     const removeItem = vi.fn()
     const closeDatabase = vi.fn()
     const deleteDatabase = vi.fn(async () => undefined)
@@ -30,19 +30,19 @@ describe('progressReset', () => {
     expect(removeItem).toHaveBeenCalledWith('ui')
     expect(removeItem).toHaveBeenCalledWith('runtime')
     expect(removeItem).toHaveBeenCalledWith('panel')
-    expect(closeDatabase).toHaveBeenCalledOnce()
-    expect(deleteDatabase).toHaveBeenCalledOnce()
-    expect(clearInventory).not.toHaveBeenCalled()
-    expect(clearWorldSession).not.toHaveBeenCalled()
+    expect(clearInventory).toHaveBeenCalledOnce()
+    expect(clearWorldSession).toHaveBeenCalledOnce()
+    expect(closeDatabase).not.toHaveBeenCalled()
+    expect(deleteDatabase).not.toHaveBeenCalled()
     expect(reload).toHaveBeenCalledOnce()
   })
 
-  it('falls back to table clears when database deletion fails', async () => {
+  it('falls back to deleting the database when table clear fails', async () => {
     const closeDatabase = vi.fn()
-    const deleteDatabase = vi.fn(async () => {
-      throw new Error('delete failed')
+    const deleteDatabase = vi.fn(async () => undefined)
+    const clearInventory = vi.fn(async () => {
+      throw new Error('clear failed')
     })
-    const clearInventory = vi.fn(async () => undefined)
     const clearWorldSession = vi.fn(async () => undefined)
     const reload = vi.fn()
 

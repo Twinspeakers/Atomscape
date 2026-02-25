@@ -1,5 +1,19 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { buildQuestProgressModel } from '@features/quests/questDefinitions'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from 'react'
+import {
+  buildQuestProgressModel,
+  CONTROL_SHIP_QUEST_ID,
+  GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID,
+  type QuestProgressView,
+} from '@features/quests/questDefinitions'
 import { gameDb } from '@platform/db/gameDb'
 import * as questUiSelectors from '@state/selectors/questUiSelectors'
 import { useAppStore, worldSessionRowIdForSector } from '@state/store'
@@ -8,6 +22,7 @@ import { StructuredText } from './ui/StructuredText'
 import {
   orderedSectors,
   resolveSectorWorldTargetCount,
+  TRAINING_SECTOR_ID,
   type SectorId,
 } from '@domain/spec/sectorSpec'
 import type { SectorMapTelemetry } from '@features/viewport/types'
@@ -54,6 +69,28 @@ function questTypeLabel(type: 'Main Quest' | 'Side Quest'): string {
   return type === 'Main Quest' ? 'Main' : 'Side'
 }
 
+function questProgressBadge(quest: QuestProgressView): { label: string; color: string } {
+  if (quest.completed) {
+    return {
+      label: 'Complete',
+      color: '#78ef00',
+    }
+  }
+
+  const hasProgress = quest.current || quest.steps.some((step) => step.completed)
+  if (hasProgress) {
+    return {
+      label: 'In Progress',
+      color: '#d89a2b',
+    }
+  }
+
+  return {
+    label: 'Not Started',
+    color: '#f87171',
+  }
+}
+
 function summarizeStepText(text: string, limit = 150): string {
   const compact = text.replace(/\s+/g, ' ').trim()
   if (compact.length <= limit) {
@@ -63,9 +100,26 @@ function summarizeStepText(text: string, limit = 150): string {
   return `${compact.slice(0, limit).trimEnd()}...`
 }
 
+function galaxyBarCounterColor(value: number): string {
+  if (value <= 0) {
+    return '#f87171'
+  }
+
+  if (value < 100) {
+    return '#d89a2b'
+  }
+
+  return '#78ef00'
+}
+
 const InventoryPanel = lazy(async () => {
   const module = await import('./panels/InventoryPanel')
   return { default: module.InventoryPanel }
+})
+
+const ShipOverlay = lazy(async () => {
+  const module = await import('./overlay/ShipOverlay')
+  return { default: module.ShipOverlay }
 })
 
 const LaboratoryOverlay = lazy(async () => {
@@ -113,24 +167,31 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
   const tutorialChecklist = useAppStore(questUiSelectors.selectTutorialChecklist)
   const tutorialCurrentStepIndex = useAppStore(questUiSelectors.selectTutorialCurrentStepIndex)
   const tutorialComplete = useAppStore(questUiSelectors.selectTutorialComplete)
-  const tutorialEnabled = useAppStore(questUiSelectors.selectTutorialEnabled)
   const inventory = useAppStore(questUiSelectors.selectInventory)
   const energy = useAppStore(questUiSelectors.selectEnergy)
   const credits = useAppStore(questUiSelectors.selectCredits)
+  const galaxyBarsCrafted = useAppStore(questUiSelectors.selectGalaxyBarsCrafted)
   const activeSectorId = useAppStore(questUiSelectors.selectActiveSectorId)
   const worldDestroyedCount = useAppStore(questUiSelectors.selectWorldDestroyedCount)
   const worldRemainingCount = useAppStore(questUiSelectors.selectWorldRemainingCount)
   const worldVisitedZoneIds = useAppStore(questUiSelectors.selectWorldVisitedZoneIds)
   const jumpToSector = useAppStore(questUiSelectors.selectJumpToSector)
   const activeMainQuestId = useAppStore(questUiSelectors.selectActiveMainQuestId)
-  const resetTutorial = useAppStore(questUiSelectors.selectResetTutorial)
-  const dismissTutorial = useAppStore(questUiSelectors.selectDismissTutorial)
   const pinnedQuestIds = useAppStore(questUiSelectors.selectPinnedQuestIds)
   const questRewardHistory = useAppStore(questUiSelectors.selectQuestRewardHistory)
+  const claimedQuestRewardIds = useAppStore(questUiSelectors.selectClaimedQuestRewardIds)
   const toggleQuestPin = useAppStore(questUiSelectors.selectToggleQuestPin)
   const setActiveMainQuest = useAppStore(questUiSelectors.selectSetActiveMainQuest)
+  const [expandedQuestState, setExpandedQuestState] = useState<Record<string, boolean>>({})
   const [expandedStepState, setExpandedStepState] = useState<Record<string, boolean>>({})
   const [sectorTelemetryById, setSectorTelemetryById] = useState<Partial<Record<SectorId, SectorMapTelemetry>>>({})
+  const [modalOffset, setModalOffset] = useState({ x: 0, y: 0 })
+  const dragStateRef = useRef<{
+    originX: number
+    originY: number
+    pointerStartX: number
+    pointerStartY: number
+  } | null>(null)
 
   const questRows = useMemo(
     () =>
@@ -142,8 +203,18 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
         inventory,
         credits,
         energy,
+        galaxyBarsCrafted,
       }),
-    [tutorialChecklist, tutorialCurrentStepIndex, tutorialComplete, activeMainQuestId, inventory, credits, energy],
+    [
+      tutorialChecklist,
+      tutorialCurrentStepIndex,
+      tutorialComplete,
+      activeMainQuestId,
+      inventory,
+      credits,
+      energy,
+      galaxyBarsCrafted,
+    ],
   )
 
   const isStepExpanded = (questId: string, step: { id: string; current: boolean }): boolean => {
@@ -168,10 +239,28 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
     })
   }
 
+  const isQuestExpanded = (questId: string): boolean => expandedQuestState[questId] === true
+
+  const toggleQuestExpanded = (questId: string): void => {
+    setExpandedQuestState((current) => ({
+      ...current,
+      [questId]: !(current[questId] === true),
+    }))
+  }
+
   const recentRewardHistory = useMemo(
     () => questRewardHistory.slice(-8).reverse(),
     [questRewardHistory],
   )
+  const mapSectors = useMemo(
+    () => orderedSectors.filter((sectorDef) => sectorDef.id !== TRAINING_SECTOR_ID),
+    [],
+  )
+  const completedQuestCount = useMemo(
+    () => questRows.filter((quest) => quest.completed).length,
+    [questRows],
+  )
+  const controlQuestComplete = claimedQuestRewardIds.includes(CONTROL_SHIP_QUEST_ID)
 
   useEffect(() => {
     if (section !== 'map') {
@@ -182,7 +271,7 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
 
     const loadSectorTelemetry = async () => {
       const entries = await Promise.all(
-        orderedSectors.map(async (sectorDef) => {
+        mapSectors.map(async (sectorDef) => {
           const worldTargetCount = resolveSectorWorldTargetCount(sectorDef.id)
           const persisted = await gameDb.worldSession.get(worldSessionRowIdForSector(sectorDef.id))
           const persistedDepletedCount = Array.isArray(persisted?.depletedTargetIds)
@@ -233,15 +322,73 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
     return () => {
       cancelled = true
     }
-  }, [section, activeSectorId, worldDestroyedCount, worldRemainingCount, worldVisitedZoneIds.length])
+  }, [
+    section,
+    activeSectorId,
+    mapSectors,
+    worldDestroyedCount,
+    worldRemainingCount,
+    worldVisitedZoneIds.length,
+  ])
+
+  useEffect(() => {
+    const handleWindowMouseMove = (event: MouseEvent) => {
+      const dragState = dragStateRef.current
+      if (!dragState) {
+        return
+      }
+
+      const deltaX = event.clientX - dragState.pointerStartX
+      const deltaY = event.clientY - dragState.pointerStartY
+      setModalOffset({
+        x: dragState.originX + deltaX,
+        y: dragState.originY + deltaY,
+      })
+    }
+
+    const handleWindowMouseUp = () => {
+      dragStateRef.current = null
+    }
+
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove)
+      window.removeEventListener('mouseup', handleWindowMouseUp)
+    }
+  }, [])
+
+  const beginModalDrag = useCallback((event: ReactMouseEvent<HTMLElement>) => {
+    if (event.button !== 0) {
+      return
+    }
+
+    const target = event.target as HTMLElement | null
+    if (target?.closest('button, a, input, textarea, select, [role="button"]')) {
+      return
+    }
+
+    dragStateRef.current = {
+      originX: modalOffset.x,
+      originY: modalOffset.y,
+      pointerStartX: event.clientX,
+      pointerStartY: event.clientY,
+    }
+    event.preventDefault()
+  }, [modalOffset.x, modalOffset.y])
 
   return (
-    <div className="pointer-events-auto absolute inset-0 z-[60] flex items-center justify-center bg-transparent px-4 py-5">
-      <section className="panel-shell ui-stack-sm flex h-[min(88vh,800px)] w-[min(1120px,100%)] flex-col rounded-xl p-4">
-        <header className="flex items-center justify-between gap-3 pb-3">
+    <div className="pointer-events-none absolute inset-0 z-[60] flex items-center justify-center bg-transparent px-4 py-5">
+      <section
+        className="pointer-events-auto panel-shell ui-stack-sm flex h-[min(88vh,800px)] w-[min(1120px,100%)] flex-col rounded-xl p-4"
+        style={{ transform: `translate(${modalOffset.x}px, ${modalOffset.y}px)` }}
+      >
+        <header
+          onMouseDown={beginModalDrag}
+          className="flex cursor-grab select-none items-center justify-between gap-3 pb-3 active:cursor-grabbing"
+        >
           <div>
             <p className="panel-heading">Game Menu</p>
-            <p className="ui-note">J: Quests | I: Inventory | M: Map | L: Laboratory | P: Station | O: Store | C: Crew | `: Wiki | Esc: Close</p>
           </div>
           <button
             onClick={onClose}
@@ -253,41 +400,44 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
 
         <div className="flex flex-wrap items-center gap-1.5">
           <button data-tutorial-focus="game-menu-quests" onClick={() => onSectionChange('quests')} className={tabClass(section === 'quests')}>
-            Quests
+            Quests (J)
+          </button>
+          <button data-tutorial-focus="game-menu-ship" onClick={() => onSectionChange('ship')} className={tabClass(section === 'ship')}>
+            Ship (H)
           </button>
           <button data-tutorial-focus="game-menu-inventory" onClick={() => onSectionChange('inventory')} className={tabClass(section === 'inventory')}>
-            Inventory
+            Inventory (I)
           </button>
           <button
             data-tutorial-focus="game-menu-map"
             onClick={() => onSectionChange('map')}
             className={tabClass(section === 'map')}
           >
-            Map
+            Map (M)
           </button>
           <button
             data-tutorial-focus="game-menu-laboratory"
             onClick={() => onSectionChange('laboratory')}
             className={tabClass(section === 'laboratory')}
           >
-            Laboratory
+            Laboratory (L)
           </button>
           <button
             data-tutorial-focus="game-menu-station"
             onClick={() => onSectionChange('station')}
             className={tabClass(section === 'station')}
           >
-            Station
+            Station (P)
           </button>
           <button
             data-tutorial-focus="game-menu-store"
             onClick={() => onSectionChange('store')}
             className={tabClass(section === 'store')}
           >
-            Store
+            Store (O)
           </button>
           <button data-tutorial-focus="game-menu-crew" onClick={() => onSectionChange('crew')} className={tabClass(section === 'crew')}>
-            Crew
+            Crew (C)
           </button>
           <button data-tutorial-focus="game-menu-failures" onClick={() => onSectionChange('failures')} className={tabClass(section === 'failures')}>
             Failure Report
@@ -296,9 +446,17 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
             Log
           </button>
           <button data-tutorial-focus="game-menu-wiki" onClick={() => onSectionChange('wiki')} className={tabClass(section === 'wiki')}>
-            Wiki
+            Wiki (`)
           </button>
         </div>
+
+        {section === 'ship' && (
+          <div className="min-h-0 flex-1">
+            <Suspense fallback={sectionLoadingFallback}>
+              <ShipOverlay embedded />
+            </Suspense>
+          </div>
+        )}
 
         {section === 'inventory' && (
           <div className="min-h-0 flex-1">
@@ -315,14 +473,21 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
               <p className="ui-note mt-1">
                 Current Sector: {orderedSectors.find((sectorDef) => sectorDef.id === activeSectorId)?.label ?? activeSectorId}
               </p>
+              {!controlQuestComplete && (
+                <p className="ui-note text-amber-200">
+                  Jump locked: complete Control The Ship to unlock sector travel.
+                </p>
+              )}
               <p className="ui-note">
                 Live Cleanup: {worldDestroyedCount} cleared, {worldRemainingCount} active contacts.
               </p>
               <p className="ui-note">Visited Zones: {worldVisitedZoneIds.length}</p>
             </div>
             <div className="grid gap-2 md:grid-cols-2">
-              {orderedSectors.map((sectorDef) => {
+              {mapSectors.map((sectorDef) => {
                 const active = sectorDef.id === activeSectorId
+                const jumpLockedByControlQuest = !controlQuestComplete
+                const jumpDisabled = active || jumpLockedByControlQuest
                 const telemetry = sectorTelemetryById[sectorDef.id]
                 return (
                   <article key={sectorDef.id} className="ui-surface-card-strong ui-stack-xs">
@@ -347,12 +512,16 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
                     </p>
                     <button
                       onClick={() => {
+                        if (jumpDisabled) {
+                          return
+                        }
+
                         void jumpToSector(sectorDef.id)
                       }}
                       className="ui-action-button-sm mt-1"
-                      disabled={active}
+                      disabled={jumpDisabled}
                     >
-                      {active ? 'In Sector' : 'Jump'}
+                      {active ? 'In Sector' : jumpLockedByControlQuest ? 'Locked' : 'Jump'}
                     </button>
                   </article>
                 )
@@ -420,25 +589,8 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
         {section === 'quests' && (
           <div className="ui-content-scroll min-h-0 flex-1 space-y-4 overflow-auto pr-1">
             <div className="ui-surface-card">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`ui-status-tag ${tutorialEnabled ? 'bg-slate-700/40 text-slate-100' : 'bg-slate-900/40 text-slate-400'}`}>
-                  Questline {tutorialEnabled ? 'Enabled' : 'Disabled'}
-                </span>
-                <button
-                  onClick={resetTutorial}
-                  className="ui-action-button-sm"
-                >
-                  Reset Main Quest
-                </button>
-                {tutorialEnabled && (
-                  <button
-                    onClick={dismissTutorial}
-                    className="ui-action-button-sm"
-                  >
-                    Disable Main Quest
-                  </button>
-                )}
-              </div>
+              <p className="ui-title">Quests Completed</p>
+              <p className="ui-note mt-1">{completedQuestCount}/{questRows.length}</p>
             </div>
 
             <div className="ui-surface-card ui-stack-xs">
@@ -466,10 +618,32 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
 
             {questRows.map((quest) => (
               <article key={quest.id} className="ui-surface-card-strong">
+                {(() => {
+                  const questHasSteps = quest.steps.length > 0
+                  const questExpanded = isQuestExpanded(quest.id)
+                  const progressBadge = questProgressBadge(quest)
+                  const galaxyBarCounterMatch = quest.id === GALAXY_BAR_AUTOMATION_SIDE_QUEST_ID
+                    ? quest.summary.match(/\b\d+\/100\b/)
+                    : null
+                  const questSummaryContent =
+                    galaxyBarCounterMatch && galaxyBarCounterMatch.index != null
+                      ? (
+                          <>
+                            {quest.summary.slice(0, galaxyBarCounterMatch.index)}
+                            <span style={{ color: galaxyBarCounterColor(galaxyBarsCrafted) }}>
+                              {galaxyBarCounterMatch[0]}
+                            </span>
+                            {quest.summary.slice(galaxyBarCounterMatch.index + galaxyBarCounterMatch[0].length)}
+                          </>
+                        )
+                      : quest.summary
+
+                  return (
+                    <>
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div>
                     <p className="ui-title">{quest.title}</p>
-                    <p className="ui-subtitle">{quest.summary}</p>
+                    <p className="ui-subtitle">{questSummaryContent}</p>
                     {quest.rewards.length > 0 && (
                       <div className="mt-1 space-y-0.5">
                         <p className="ui-note">Rewards:</p>
@@ -482,6 +656,14 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
                     )}
                   </div>
                   <div className="flex items-center gap-1">
+                    {questHasSteps && (
+                      <button
+                        onClick={() => toggleQuestExpanded(quest.id)}
+                        className="ui-action-button-sm px-2 py-0.5 text-[11px]"
+                      >
+                        {questExpanded ? 'Collapse' : 'Expand'}
+                      </button>
+                    )}
                     {quest.type === 'Main Quest' && (
                       <button
                         onClick={() => setActiveMainQuest(quest.id)}
@@ -498,65 +680,73 @@ export function GameModal({ section, onSectionChange, onClose }: GameModalProps)
                       {pinnedQuestIds.includes(quest.id) ? 'Unpin' : 'Pin'}
                     </button>
                     <span className={questTypeClass(quest.type)}>{questTypeLabel(quest.type)}</span>
-                    <span className={`ui-status-tag ${quest.completed ? 'bg-slate-700/40 text-slate-100' : 'bg-slate-900/40 text-slate-300'}`}>
-                      {quest.completed ? 'Complete' : 'In Progress'}
+                    <span
+                      className="ui-status-tag bg-transparent"
+                      style={{ color: progressBadge.color }}
+                    >
+                      {progressBadge.label}
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  {quest.steps.map((step, index) => {
-                    const expanded = isStepExpanded(quest.id, step)
+                {questHasSteps && questExpanded && (
+                  <div className="space-y-1.5">
+                    {quest.steps.map((step, index) => {
+                      const expanded = isStepExpanded(quest.id, step)
 
-                    return (
-                      <div key={step.id} className={`rounded px-2 py-1.5 ${statusClass(step)}`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="ui-body-copy font-semibold">
-                            {step.completed ? 'Done' : step.current ? 'Current' : 'Next'} Step {index + 1}: {step.title}
-                          </p>
-                          <button
-                            onClick={() => toggleStepExpanded(quest.id, step)}
-                            className="ui-action-button-sm px-2 py-0.5 text-[11px]"
-                          >
-                            {expanded ? 'Minimize' : 'Expand'}
-                          </button>
-                        </div>
+                      return (
+                        <div key={step.id} className={`rounded px-2 py-1.5 ${statusClass(step)}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="ui-body-copy font-semibold">
+                              {step.completed ? 'Done' : step.current ? 'Current' : 'Next'} Step {index + 1}: {step.title}
+                            </p>
+                            <button
+                              onClick={() => toggleStepExpanded(quest.id, step)}
+                              className="ui-action-button-sm px-2 py-0.5 text-[11px]"
+                            >
+                              {expanded ? 'Minimize' : 'Expand'}
+                            </button>
+                          </div>
 
-                        {!expanded && (
-                          <p className="ui-note mt-1 text-slate-200">
-                            {summarizeStepText(step.description)}
-                          </p>
-                        )}
+                          {!expanded && (
+                            <p className="ui-note mt-1 text-slate-200">
+                              {summarizeStepText(step.description)}
+                            </p>
+                          )}
 
-                        {expanded && (
-                          <>
-                            <StructuredText
-                              text={step.description}
-                              containerClassName="mt-1 space-y-1"
-                              paragraphClassName="ui-note"
-                              listClassName="ui-note list-disc space-y-0.5 pl-4"
-                              orderedListClassName="ui-note list-decimal space-y-0.5 pl-4"
-                            />
-                            {step.detail && (
+                          {expanded && (
+                            <>
                               <StructuredText
-                                text={step.detail}
+                                text={step.description}
                                 containerClassName="mt-1 space-y-1"
-                                paragraphClassName="ui-note text-slate-100"
-                                listClassName="ui-note list-disc space-y-0.5 pl-4 text-slate-100"
-                                orderedListClassName="ui-note list-decimal space-y-0.5 pl-4 text-slate-100"
+                                paragraphClassName="ui-note"
+                                listClassName="ui-note list-disc space-y-0.5 pl-4"
+                                orderedListClassName="ui-note list-decimal space-y-0.5 pl-4"
                               />
-                            )}
-                            {step.hint && (
-                              <p className="ui-note mt-1 text-slate-200">
-                                Hint: {step.hint}
-                              </p>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+                              {step.detail && (
+                                <StructuredText
+                                  text={step.detail}
+                                  containerClassName="mt-1 space-y-1"
+                                  paragraphClassName="ui-note text-slate-100"
+                                  listClassName="ui-note list-disc space-y-0.5 pl-4 text-slate-100"
+                                  orderedListClassName="ui-note list-decimal space-y-0.5 pl-4 text-slate-100"
+                                />
+                              )}
+                              {step.hint && (
+                                <p className="ui-note mt-1 text-slate-200">
+                                  Hint: {step.hint}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                    </>
+                  )
+                })()}
               </article>
             ))}
           </div>

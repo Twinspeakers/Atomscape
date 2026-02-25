@@ -39,7 +39,7 @@ export function StationOverlay({ embedded = false, onClose }: StationOverlayProp
     return Math.max(0, Math.min(100, (energy / maxEnergy) * 100))
   }, [energy, maxEnergy])
 
-  const canStartCharging = charging || simulationSummary.inRange
+  const canStartCharging = charging || (docked && simulationSummary.inRange)
   const shellClass = embedded
     ? 'panel-shell flex h-full min-h-0 flex-col rounded-xl p-3.5'
     : 'panel-shell pointer-events-auto absolute right-0 top-0 h-full w-[clamp(380px,34vw,620px)] rounded-l-xl px-4 py-4'
@@ -158,7 +158,12 @@ export function StationOverlay({ embedded = false, onClose }: StationOverlayProp
               {charging ? 'Stop Charging' : 'Start Charging'}
             </button>
           </div>
-          {!charging && !simulationSummary.inRange && (
+          {!charging && !docked && (
+            <p className="ui-note text-amber-300">
+              Charging blocked: dock to station first.
+            </p>
+          )}
+          {!charging && docked && !simulationSummary.inRange && (
             <p className="ui-note text-amber-300">
               Charging blocked: move within {CHARGING_RANGE_METERS} m of the station.
             </p>
